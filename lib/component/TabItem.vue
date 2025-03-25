@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { computed, inject, type PropType, ref, useTemplateRef } from 'vue'
 import {
+  type DspInstanceMap,
+  instanceMapInjectKey,
   type PaneNode,
   paneNodeInjectKey,
   rootPaneNodeInjectKey,
@@ -8,6 +10,7 @@ import {
   TabInsertPosition,
 } from '../types'
 import CloseBtn from './CloseBtn.vue'
+import { getAllPaneTabs } from '../utils'
 
 const props = defineProps({
   tab: {
@@ -15,10 +18,15 @@ const props = defineProps({
     required: true,
   },
 })
-const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
-const rootPaneNodeData = inject<PaneNode>(rootPaneNodeInjectKey)!
 
-const isActive = computed(() => props.tab.id === paneNodeData.activeTab)
+const emit = defineEmits<{
+  closeTab: [tabId: string]
+}>()
+
+const paneNode = inject<PaneNode>(paneNodeInjectKey)!
+const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
+const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
+const isActive = computed(() => props.tab.id === paneNode.activeTab)
 
 const isOverDropZone = ref(false)
 const insertPosition = ref<TabInsertPosition>(TabInsertPosition.Left)
@@ -28,7 +36,6 @@ const handleDragStart = (e: DragEvent): void => {
   if (e.dataTransfer) {
     e.dataTransfer.setData('application/json', JSON.stringify(props.tab))
   }
-  console.log('drag start set data', JSON.stringify(props.tab))
 }
 
 // 处理拖放事件
@@ -50,7 +57,17 @@ const handleDrop = (e: DragEvent): void => {
     const dropData = e.dataTransfer?.getData('application/json')
     const tab = JSON.parse(dropData) as Tab
     if (tab.id === props.tab.id) return
-    console.log('drop tab', tab)
+    // 先删除之前
+    const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+    if (!originPane) return
+    const originPaneInstance = dspInstanceMap.get(originPane.paneId)
+    if (originPaneInstance) {
+      originPaneInstance.closeTab(tab.id)
+    }
+    const targetPaneInstance = dspInstanceMap.get(paneNode.id)
+    if (targetPaneInstance) {
+      targetPaneInstance.insertTab(tab, props.tab.id, insertPosition.value)
+    }
   }
 }
 
@@ -65,8 +82,6 @@ const calculateDropPosition = (e: DragEvent): void => {
     insertPosition.value = TabInsertPosition.Right
   }
 }
-
-const closeTab = (): void => {}
 </script>
 
 <template>
@@ -83,9 +98,9 @@ const closeTab = (): void => {}
     @dragleave.stop="handleDragLeave"
     @dragover.stop="handleDragOver"
     @drop.stop="handleDrop"
-    @click="
+    @click.stop="
       () => {
-        paneNodeData.activeTab = tab.id
+        paneNode.activeTab = tab.id
       }
     "
   >
@@ -93,7 +108,13 @@ const closeTab = (): void => {}
       {{ tab.id }}
     </div>
     <div class="operation">
-      <CloseBtn @click="() => closeTab()" />
+      <CloseBtn
+        @click.stop="
+          () => {
+            emit('closeTab', tab.id)
+          }
+        "
+      />
     </div>
   </div>
 </template>
@@ -140,8 +161,8 @@ const closeTab = (): void => {}
       height: calc(100% + 2px);
       width: 4px;
       background-color: white;
-      top: 0;
-      left: -2px;
+      top: -2px;
+      left: -4px;
       z-index: 5;
       content: '';
     }
@@ -154,7 +175,7 @@ const closeTab = (): void => {}
       height: calc(100% + 2px);
       width: 4px;
       background-color: white;
-      top: -1px;
+      top: -2px;
       right: -2px;
       z-index: 5;
       content: '';

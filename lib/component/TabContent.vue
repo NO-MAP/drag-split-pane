@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-import { inject, onMounted, ref, useTemplateRef, type Ref } from 'vue'
+import { inject, nextTick, onMounted, ref, useTemplateRef, type Ref } from 'vue'
 import {
+  type DspInstanceMap,
+  instanceMapInjectKey,
   loadedPaneTabInjectKey,
   PaneDirection,
   type PaneNode,
@@ -8,9 +10,13 @@ import {
   rootPaneNodeInjectKey,
   type Tab,
   TabInsertPanePosition,
+  TabInsertPosition,
 } from '../types'
+import { findPaneNodeById, getAllPaneTabs } from '../utils'
+import { v4 as uuidv4 } from 'uuid'
 
-const rootPaneNodeData = inject<PaneNode>(rootPaneNodeInjectKey)!
+const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
+const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNode = inject<PaneNode>(paneNodeInjectKey)!
 const loadedPaneTab = inject<string[]>(loadedPaneTabInjectKey)!
 const isOverDropZone = ref(false)
@@ -30,14 +36,61 @@ const handleDragLeave = (): void => {
   isOverDropZone.value = false
 }
 
-const handleDrop = (e: DragEvent): void => {
+const handleDrop = async (e: DragEvent) => {
   e.preventDefault()
   isOverDropZone.value = false
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    console.log('handleDrop data', dropData)
     const tab = JSON.parse(dropData) as Tab
-    console.log('drop tab', tab)
+    if (insertPosition.value === TabInsertPanePosition.Middle) {
+      if (tab.id === paneNode.activeTab) {
+        return
+      }
+      if (paneNode.tabs.find((_tab) => _tab.id === tab.id)) {
+        paneNode.activeTab = tab.id
+        return
+      }
+      // 先删除之前
+      const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+      if (!originPane) return
+      const originPaneInstance = dspInstanceMap.get(originPane.paneId)
+      if (originPaneInstance) {
+        originPaneInstance.closeTab(tab.id)
+      }
+      await nextTick()
+      const paneInstance = dspInstanceMap.get(paneNode.id)
+      if (paneInstance) {
+        paneInstance.insertTab(tab, paneNode.activeTab, TabInsertPosition.Right)
+      }
+    } else {
+      // 先删除之前
+      const originPaneTab = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+      if (!originPaneTab) return
+      const originPane = findPaneNodeById(rootPaneNode, originPaneTab.paneId)
+      if (originPane.tabs.length === 1 && paneNode.activeTab === tab.id) {
+        return
+      }
+      const originPaneInstance = dspInstanceMap.get(originPaneTab.paneId)
+      if (originPaneInstance) {
+        originPaneInstance.closeTab(tab.id)
+      }
+      await nextTick()
+      const paneInstance = dspInstanceMap.get(paneNode.id)
+      if (paneInstance) {
+        paneInstance.insertPane(
+          {
+            id: uuidv4(),
+            tabs: [tab],
+            activeTab: tab.id,
+            direction: PaneDirection.Horizontal,
+            children: [],
+            size: [],
+          },
+          insertPosition.value,
+        )
+        paneInstance.doLayoutChildrenPane()
+      }
+    }
   }
 }
 
@@ -120,6 +173,7 @@ const calculateDropPosition = (e: DragEvent): void => {
     ></div>
 
     <!-- 当前面板内容 -->
+    <div>{{ paneNode.id }}</div>
     <div :id="`tabContent_${paneNode.id}`" class="current-content"></div>
   </div>
 </template>

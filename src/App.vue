@@ -5,14 +5,14 @@ import { PaneDirection, type PaneNode } from '../lib/types'
 import { v4 as uuidv4 } from 'uuid'
 
 const defaultPaneNode: PaneNode = reactive({
-  id: uuidv4(),
+  id: 'pane-0',
   direction: PaneDirection.Horizontal,
   size: [300, 300],
   activeTab: '',
   tabs: [],
   children: [
     {
-      id: uuidv4(),
+      id: 'pane-0-0',
       direction: PaneDirection.Horizontal,
       size: [],
       activeTab: 'activeTab1',
@@ -30,13 +30,13 @@ const defaultPaneNode: PaneNode = reactive({
       children: [],
     },
     {
-      id: uuidv4(),
+      id: 'pane-0-1',
       direction: PaneDirection.Vertical,
       size: [300, 300],
       activeTab: '',
       children: [
         {
-          id: uuidv4(),
+          id: 'pane-0-1-0',
           direction: PaneDirection.Horizontal,
           size: [],
           activeTab: 'activeTab2',
@@ -54,7 +54,7 @@ const defaultPaneNode: PaneNode = reactive({
           ],
         },
         {
-          id: uuidv4(),
+          id: 'pane-0-1-1',
           direction: PaneDirection.Horizontal,
           size: [],
           activeTab: 'activeTab3',
@@ -76,13 +76,19 @@ const defaultPaneNode: PaneNode = reactive({
     },
   ],
 })
+
+const testBtn = () => {
+  console.log(JSON.parse(JSON.stringify(defaultPaneNode)))
+}
 </script>
 
 <template>
   <div class="example-wrapper">
     <div class="content1">
       <div class="content2">
-        <div class="left"></div>
+        <div class="left">
+          <button @click="() => testBtn()">test</button>
+        </div>
         <div class="right">
           <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" />
         </div>

@@ -1,14 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  getCurrentInstance,
-  inject,
-  onBeforeUnmount,
-  onMounted,
-  provide,
-  ref,
-  useTemplateRef,
-} from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, provide, ref, useTemplateRef } from 'vue'
 import {
   type ColorSetting,
   type DspInstanceMap,
@@ -21,13 +12,17 @@ import {
   PaneDirection,
   paneNodeInjectKey,
   rootPaneNodeInjectKey,
+  type Tab,
+  TabInsertPanePosition,
+  TabInsertPosition,
 } from './types'
-import { findPaneNodeById, getAllPaneTabs } from './utils'
+import { clearEmptyPane, findPaneNodeById, getAllPaneTabs } from './utils'
 import ResizeLine from './component/ResizeLine.vue'
 import TabHeaders from './component/TabHeaders.vue'
 import TabContent from './component/TabContent.vue'
 import DragSplitPane from './DragSplitPane.vue'
 import { useResizeObserver } from '@vueuse/core'
+import { v4 as uuidv4 } from 'uuid'
 
 interface Props {
   colorSettings?: Partial<ColorSetting>
@@ -79,10 +74,12 @@ if (isRoot) {
 }
 
 onMounted(() => {
-  const dspInstance = getCurrentInstance()
-  if (dspInstance) {
-    dspInstanceMap.set(props.paneId, dspInstance)
-  }
+  dspInstanceMap.set(props.paneId, {
+    closeTab,
+    insertTab,
+    insertPane,
+    doLayoutChildrenPane,
+  })
 })
 
 onBeforeUnmount(() => {
@@ -147,12 +144,59 @@ onBeforeUnmount(() => {
 const closeTab = (tabId: string) => {
   const index = paneNode.tabs.findIndex((tab) => tab.id === tabId)
   if (index === -1) return false
+
+  const wasActive = paneNode.activeTab === tabId // 检查关闭的是否为当前激活的标签
+
   paneNode.tabs.splice(index, 1)
+
+  if (paneNode.tabs.length === 0) {
+    clearEmptyPane(rootPaneNode) // 清除空面板
+  } else if (wasActive) {
+    // 仅当关闭的是激活标签时调整激活状态
+    // 计算新的激活索引：若原索引超出当前范围则取最后一个，否则保持原位置
+    const newActiveIndex = index >= paneNode.tabs.length ? paneNode.tabs.length - 1 : index
+    paneNode.activeTab = paneNode.tabs[newActiveIndex].id
+  }
+  return true
+}
+
+const insertTab = (tab: Tab, neighborTabId: string, insertPosition: TabInsertPosition) => {
+  const tabIndex = paneNode.tabs.findIndex((t) => t.id === neighborTabId)
+  if (tabIndex !== -1) {
+    // 计算插入位置
+    const insertIndex = insertPosition === TabInsertPosition.Left ? tabIndex : tabIndex + 1
+    // 插入新Tab
+    paneNode.activeTab = tab.id
+    paneNode.tabs.splice(insertIndex, 0, tab)
+    return true
+  }
+  return false
+}
+
+const insertPane = (newPane: PaneNode, tabInsertPanePosition: TabInsertPanePosition) => {
+  const originalPane = { ...paneNode }
+  paneNode.id = uuidv4()
+  paneNode.children = [TabInsertPanePosition.Bottom, TabInsertPanePosition.Right].includes(
+    tabInsertPanePosition,
+  )
+    ? [originalPane, newPane]
+    : [newPane, originalPane]
+  paneNode.direction = [TabInsertPanePosition.Left, TabInsertPanePosition.Right].includes(
+    tabInsertPanePosition,
+  )
+    ? PaneDirection.Horizontal
+    : PaneDirection.Vertical
+  paneNode.size = [100, 100]
+  paneNode.activeTab = ''
+  paneNode.tabs = []
   return true
 }
 
 defineExpose({
   closeTab,
+  insertTab,
+  insertPane,
+  doLayoutChildrenPane,
 })
 </script>
 
@@ -164,6 +208,7 @@ defineExpose({
     :class="{
       'root-pane': isRoot,
     }"
+    :id="`dragSplitPane_${paneNode.id}`"
   >
     <div
       v-if="paneNode.children.length > 0"
@@ -191,11 +236,11 @@ defineExpose({
       </div>
     </div>
     <div v-if="paneNode.tabs.length > 0" class="tabs">
-      <TabHeaders />
+      <TabHeaders @closeTab="(tabId: string) => closeTab(tabId)" />
       <TabContent />
     </div>
   </div>
-  <KeepAlive>
+  <KeepAlive v-if="isRoot">
     <Teleport v-for="tab in allPaneTabs" :key="tab.id" :to="`#tabContent_${tab.paneId}`">
       <div v-show="tab.id === tab.activeTab" class="tab-content">
         <slot name="tab-content" :tab="tab" />

@@ -3,6 +3,10 @@ import { inject, onMounted, useTemplateRef } from 'vue'
 import TabItem from './TabItem.vue'
 import { type PaneNode, paneNodeInjectKey, rootPaneNodeInjectKey, type Tab } from '../types'
 
+const emit = defineEmits<{
+  closeTab: [tabId: string]
+}>()
+
 const rootPaneNodeData = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
 
@@ -41,7 +45,12 @@ const handleDrop = (e: DragEvent): void => {
     @dragover="handleDragOver"
     @drop="handleDrop"
   >
-    <TabItem v-for="tab in paneNodeData.tabs" :key="tab.id" :tab="tab">
+    <TabItem
+      v-for="(tab, index) in paneNodeData.tabs"
+      :key="tab.id"
+      :tab="tab"
+      @closeTab="(tabId: string) => emit('closeTab', tabId)"
+    >
       {{ tab.id }}
     </TabItem>
   </div>
@@ -58,13 +67,13 @@ const handleDrop = (e: DragEvent): void => {
 
 /* 设置滚动条轨道 */
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #d3d3d3;
   /* 轨道背景色 */
 }
 
 /* 设置滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #303030;
   /* 滑块颜色 */
 }
 

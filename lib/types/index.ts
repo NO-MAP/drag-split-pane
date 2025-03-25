@@ -1,5 +1,3 @@
-import DragSplitPane from '../DragSplitPane.vue'
-
 // 主题类型定义
 export interface ColorSetting {
   // 面板相关
@@ -108,11 +106,18 @@ export enum TabInsertPanePosition {
   Middle = 'Middle',
 }
 
+export interface DragSplitPaneIns {
+  closeTab: (tabId: string) => boolean
+  insertTab: (tab: Tab, neighborTabId: string, insertPosition: TabInsertPosition) => boolean
+  insertPane: (newPane: PaneNode, tabInsertPanePosition: TabInsertPanePosition) => boolean
+  doLayoutChildrenPane: () => void
+}
+
 export const rootPaneNodeInjectKey = 'dspRootPaneNode'
 export const paneNodeInjectKey = 'dspPaneNode'
 export const loadedPaneTabInjectKey = 'dspLoadedPaneTab'
 export const instanceMapInjectKey = 'dspInstanceMap'
-export type DspInstanceMap = Map<string, InstanceType<typeof DragSplitPane>>
+export type DspInstanceMap = Map<string, DragSplitPaneIns>
 
 export enum PaneDirection {
   Vertical = 'Vertical', // 垂直
