@@ -47,38 +47,43 @@ export function findParentPane(root: PaneNode, targetId: string): PaneNode | nul
 }
 
 export const clearEmptyPane = (paneNode: PaneNode): boolean => {
-  let i = 0
+  let i = 0;
   while (i < paneNode.children.length) {
-    const child = paneNode.children[i]
-    const shouldRemoveChild = clearEmptyPane(child)
+    const child = paneNode.children[i];
+    const shouldRemoveChild = clearEmptyPane(child);
     if (shouldRemoveChild) {
-      const totalSize = paneNode.size.reduce((a, b) => a + b, 0)
-      const removedSize = paneNode.size.splice(i, 1)[0]
-      paneNode.children.splice(i, 1)
+      const totalSize = paneNode.size.reduce((a, b) => a + b, 0);
+      const removedSize = paneNode.size.splice(i, 1)[0];
+      paneNode.children.splice(i, 1);
 
       if (paneNode.children.length > 0) {
-        const remainingTotal = totalSize - removedSize
-        paneNode.size = paneNode.children.map(() => remainingTotal / paneNode.children.length)
+        const remainingTotal = totalSize - removedSize;
+        paneNode.size = paneNode.children.map(() => remainingTotal / paneNode.children.length);
       }
     } else {
-      i++
+      i++;
     }
   }
 
-  // 合并单子节点时保留原方向的关键修改
+  // 合并单子节点，无论子节点是否有children
   if (paneNode.children.length === 1) {
-    const onlyChild = paneNode.children[0]
-    if (onlyChild.children.length === 0) {
-      const parentTotalSize = paneNode.size[0] // 关键修改：使用父节点当前总尺寸
+    const onlyChild = paneNode.children[0];
+    const parentTotalSize = paneNode.size[0]; // 父节点当前总尺寸
 
-      // 保留原方向不重置！！！
-      paneNode.tabs = [...onlyChild.tabs]
-      paneNode.activeTab = onlyChild.activeTab
-      paneNode.children = [] // 仍要清空子节点
-      paneNode.size = [parentTotalSize] // 保持父级尺寸
-      paneNode.id = onlyChild.id
-    }
+    // 提升子节点的属性到父节点
+    paneNode.tabs = [...onlyChild.tabs];
+    paneNode.activeTab = onlyChild.activeTab;
+    paneNode.direction = onlyChild.direction; // 继承子节点的方向
+    paneNode.children = [...onlyChild.children];
+    paneNode.size = onlyChild.children.length > 0
+      ? [...onlyChild.size]
+      : [parentTotalSize]; // 保持尺寸
+    paneNode.id = onlyChild.id;
+
+    // 提升后，可能需要进一步清理新的子节点
+    // 递归处理当前节点，因为子节点可能仍有可合并的情况
+    clearEmptyPane(paneNode);
   }
 
-  return paneNode.tabs.length === 0 && paneNode.children.length === 0
-}
+  return paneNode.tabs.length === 0 && paneNode.children.length === 0;
+};

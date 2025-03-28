@@ -16,7 +16,7 @@ import {
   TabInsertPanePosition,
   TabInsertPosition,
 } from './types'
-import { clearEmptyPane, findPaneNodeById, getAllPaneTabs } from './utils'
+import { findPaneNodeById, getAllPaneTabs } from './utils'
 import ResizeLine from './component/ResizeLine.vue'
 import TabHeaders from './component/TabHeaders.vue'
 import TabContent from './component/TabContent.vue'
@@ -47,12 +47,12 @@ const mergedColors = computed(() => ({
 
 const variablesStyle = isRoot
   ? Object.entries(colorVariables).reduce(
-      (acc: Record<string, string>, [varName, propName]) => {
-        acc[varName] = mergedColors.value[propName]
-        return acc
-      },
-      {} as Record<string, string>,
-    )
+    (acc: Record<string, string>, [varName, propName]) => {
+      acc[varName] = mergedColors.value[propName]
+      return acc
+    },
+    {} as Record<string, string>,
+  )
   : {}
 
 const rootPaneNode = isRoot ? props.rootPaneData : inject<PaneNode>(rootPaneNodeInjectKey)!
@@ -83,8 +83,16 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  dspInstanceMap.delete(props.paneId)
+  onBeforeUnmount(() => {
+    if (dspInstanceMap.has(props.paneId)) {
+      dspInstanceMap.delete(props.paneId);
+    } else {
+      console.warn("实例已不存在", props.paneId);
+    }
+  });
 })
+
+
 
 const handleResize = (index: number, delta: number): void => {
   if (paneNode.direction === PaneDirection.Horizontal) {
@@ -149,9 +157,7 @@ const closeTab = (tabId: string) => {
 
   paneNode.tabs.splice(index, 1)
 
-  if (paneNode.tabs.length === 0) {
-    clearEmptyPane(rootPaneNode) // 清除空面板
-  } else if (wasActive) {
+  if (paneNode.tabs.length !== 0 && wasActive) {
     // 仅当关闭的是激活标签时调整激活状态
     // 计算新的激活索引：若原索引超出当前范围则取最后一个，否则保持原位置
     const newActiveIndex = index >= paneNode.tabs.length ? paneNode.tabs.length - 1 : index
@@ -201,38 +207,22 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    ref="split-pane-el"
-    class="drag-split-pane"
-    :style="variablesStyle"
-    :class="{
-      'root-pane': isRoot,
-    }"
-    :id="`dragSplitPane_${paneNode.id}`"
-  >
-    <div
-      v-if="paneNode.children.length > 0"
-      class="children-pane"
-      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']"
-    >
-      <div
-        v-for="(pane, index) in paneNode.children"
-        :key="pane.id"
-        class="pane-wrapper"
-        :style="{
-          width:
-            paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
-          height:
-            paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
-        }"
-      >
-        <DragSplitPane :pane-id="pane.id" />
-        <ResizeLine
-          v-if="index < paneNode.children.length - 1"
+  <div ref="split-pane-el" class="drag-split-pane" :style="variablesStyle" :class="{
+    'root-pane': isRoot,
+  }" :id="`dragSplitPane_${paneNode.id}`">
+    <div v-if="paneNode.children.length > 0" class="children-pane"
+      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']">
+      <div v-for="(pane, index) in paneNode.children" :key="pane.id" class="pane-wrapper" :style="{
+        width:
+          paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
+        height:
+          paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
+      }">
+        <DragSplitPane :pane-id="pane.id" :key="pane.id" />
+        <ResizeLine v-if="index < paneNode.children.length - 1"
           :direction="paneNode.direction === PaneDirection.Vertical ? 'vertical' : 'horizontal'"
           :position="paneNode.direction === PaneDirection.Vertical ? 'bottom' : 'right'"
-          @resize="(delta: number) => handleResize(index, delta)"
-        />
+          @resize="(delta: number) => handleResize(index, delta)" />
       </div>
     </div>
     <div v-if="paneNode.tabs.length > 0" class="tabs">
@@ -269,7 +259,7 @@ defineExpose({
     &.t-m-b {
       flex-direction: column;
 
-      > .pane-wrapper {
+      >.pane-wrapper {
         position: relative;
         width: 100%;
         border-bottom: 1px solid rgb(0, 0, 0);
@@ -283,7 +273,7 @@ defineExpose({
     &.l-m-r {
       flex-direction: row;
 
-      > .pane-wrapper {
+      >.pane-wrapper {
         position: relative;
         height: 100%;
         border-right: 1px solid rgb(0, 0, 0);

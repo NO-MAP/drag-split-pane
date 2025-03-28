@@ -2,79 +2,26 @@
 import { reactive } from 'vue'
 import { DragSplitPane } from '../lib/main'
 import { PaneDirection, type PaneNode } from '../lib/types'
-import { v4 as uuidv4 } from 'uuid'
 
 const defaultPaneNode: PaneNode = reactive({
-  id: 'pane-0',
-  direction: PaneDirection.Horizontal,
-  size: [300, 300],
-  activeTab: '',
-  tabs: [],
-  children: [
-    {
-      id: 'pane-0-0',
-      direction: PaneDirection.Horizontal,
-      size: [],
-      activeTab: 'activeTab1',
-      tabs: [
-        {
-          id: 'activeTab1',
-        },
-        {
-          id: uuidv4(),
-        },
-        {
-          id: uuidv4(),
-        },
-      ],
-      children: [],
-    },
-    {
-      id: 'pane-0-1',
-      direction: PaneDirection.Vertical,
-      size: [300, 300],
-      activeTab: '',
-      children: [
-        {
-          id: 'pane-0-1-0',
-          direction: PaneDirection.Horizontal,
-          size: [],
-          activeTab: 'activeTab2',
-          children: [],
-          tabs: [
-            {
-              id: 'activeTab2',
-            },
-            {
-              id: uuidv4(),
-            },
-            {
-              id: uuidv4(),
-            },
-          ],
-        },
-        {
-          id: 'pane-0-1-1',
-          direction: PaneDirection.Horizontal,
-          size: [],
-          activeTab: 'activeTab3',
-          children: [],
-          tabs: [
-            {
-              id: 'activeTab3',
-            },
-            {
-              id: uuidv4(),
-            },
-            {
-              id: uuidv4(),
-            },
-          ],
-        },
-      ],
-      tabs: [],
-    },
+  "id": "pane-0",
+  "direction": PaneDirection.Horizontal,
+  "size": [
+    1274
   ],
+  "activeTab": "activeTab1",
+  "tabs": [
+    {
+      "id": "activeTab1"
+    },
+    {
+      "id": "45e6fa6a-20b8-49c9-92a0-67eb9d060fee"
+    },
+    {
+      "id": "514e6346-08a6-4b95-b513-e6f9589051fc"
+    }
+  ],
+  "children": []
 })
 
 const testBtn = () => {
@@ -90,7 +37,7 @@ const testBtn = () => {
           <button @click="() => testBtn()">test</button>
         </div>
         <div class="right">
-          <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" />
+          <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" :key="defaultPaneNode.id" />
         </div>
       </div>
     </div>
