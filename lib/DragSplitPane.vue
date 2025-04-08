@@ -47,12 +47,12 @@ const mergedColors = computed(() => ({
 
 const variablesStyle = isRoot
   ? Object.entries(colorVariables).reduce(
-    (acc: Record<string, string>, [varName, propName]) => {
-      acc[varName] = mergedColors.value[propName]
-      return acc
-    },
-    {} as Record<string, string>,
-  )
+      (acc: Record<string, string>, [varName, propName]) => {
+        acc[varName] = mergedColors.value[propName]
+        return acc
+      },
+      {} as Record<string, string>,
+    )
   : {}
 
 const rootPaneNode = isRoot ? props.rootPaneData : inject<PaneNode>(rootPaneNodeInjectKey)!
@@ -85,14 +85,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   onBeforeUnmount(() => {
     if (dspInstanceMap.has(props.paneId)) {
-      dspInstanceMap.delete(props.paneId);
+      dspInstanceMap.delete(props.paneId)
     } else {
-      console.warn("实例已不存在", props.paneId);
+      console.warn('实例已不存在', props.paneId)
     }
-  });
+  })
 })
-
-
 
 const handleResize = (index: number, delta: number): void => {
   if (paneNode.direction === PaneDirection.Horizontal) {
@@ -207,22 +205,38 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="split-pane-el" class="drag-split-pane" :style="variablesStyle" :class="{
-    'root-pane': isRoot,
-  }" :id="`dragSplitPane_${paneNode.id}`">
-    <div v-if="paneNode.children.length > 0" class="children-pane"
-      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']">
-      <div v-for="(pane, index) in paneNode.children" :key="pane.id" class="pane-wrapper" :style="{
-        width:
-          paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
-        height:
-          paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
-      }">
+  <div
+    ref="split-pane-el"
+    class="drag-split-pane"
+    :style="variablesStyle"
+    :class="{
+      'root-pane': isRoot,
+    }"
+    :id="`dragSplitPane_${paneNode.id}`"
+  >
+    <div
+      v-if="paneNode.children.length > 0"
+      class="children-pane"
+      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']"
+    >
+      <div
+        v-for="(pane, index) in paneNode.children"
+        :key="pane.id"
+        class="pane-wrapper"
+        :style="{
+          width:
+            paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
+          height:
+            paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
+        }"
+      >
         <DragSplitPane :pane-id="pane.id" :key="pane.id" />
-        <ResizeLine v-if="index < paneNode.children.length - 1"
+        <ResizeLine
+          v-if="index < paneNode.children.length - 1"
           :direction="paneNode.direction === PaneDirection.Vertical ? 'vertical' : 'horizontal'"
           :position="paneNode.direction === PaneDirection.Vertical ? 'bottom' : 'right'"
-          @resize="(delta: number) => handleResize(index, delta)" />
+          @resize="(delta: number) => handleResize(index, delta)"
+        />
       </div>
     </div>
     <div v-if="paneNode.tabs.length > 0" class="tabs">
@@ -259,7 +273,7 @@ defineExpose({
     &.t-m-b {
       flex-direction: column;
 
-      >.pane-wrapper {
+      > .pane-wrapper {
         position: relative;
         width: 100%;
         border-bottom: 1px solid rgb(0, 0, 0);
@@ -273,7 +287,7 @@ defineExpose({
     &.l-m-r {
       flex-direction: row;
 
-      >.pane-wrapper {
+      > .pane-wrapper {
         position: relative;
         height: 100%;
         border-right: 1px solid rgb(0, 0, 0);

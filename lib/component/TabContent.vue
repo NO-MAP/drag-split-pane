@@ -153,16 +153,25 @@ const calculateDropPosition = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div ref="tabContentRef" class="tabs-content" @dragover="handleDragOver" @dragleave="handleDragLeave"
-    @drop="handleDrop">
+  <div
+    ref="tabContentRef"
+    class="tabs-content"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
     <!-- 分屏指示器 -->
-    <div v-if="isOverDropZone" class="split-indicator" :class="{
-      top: insertPosition === TabInsertPanePosition.Top,
-      bottom: insertPosition === TabInsertPanePosition.Bottom,
-      left: insertPosition === TabInsertPanePosition.Left,
-      right: insertPosition === TabInsertPanePosition.Right,
-      middle: insertPosition === TabInsertPanePosition.Middle,
-    }"></div>
+    <div
+      v-if="isOverDropZone"
+      class="split-indicator"
+      :class="{
+        top: insertPosition === TabInsertPanePosition.Top,
+        bottom: insertPosition === TabInsertPanePosition.Bottom,
+        left: insertPosition === TabInsertPanePosition.Left,
+        right: insertPosition === TabInsertPanePosition.Right,
+        middle: insertPosition === TabInsertPanePosition.Middle,
+      }"
+    ></div>
 
     <!-- 当前面板内容 -->
     <div>{{ paneNode.id }}</div>

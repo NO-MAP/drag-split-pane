@@ -4,24 +4,22 @@ import { DragSplitPane } from '../lib/main'
 import { PaneDirection, type PaneNode } from '../lib/types'
 
 const defaultPaneNode: PaneNode = reactive({
-  "id": "pane-0",
-  "direction": PaneDirection.Horizontal,
-  "size": [
-    1274
-  ],
-  "activeTab": "activeTab1",
-  "tabs": [
+  id: 'pane-0',
+  direction: PaneDirection.Horizontal,
+  size: [1274],
+  activeTab: 'activeTab1',
+  tabs: [
     {
-      "id": "activeTab1"
+      id: 'activeTab1',
     },
     {
-      "id": "45e6fa6a-20b8-49c9-92a0-67eb9d060fee"
+      id: '45e6fa6a-20b8-49c9-92a0-67eb9d060fee',
     },
     {
-      "id": "514e6346-08a6-4b95-b513-e6f9589051fc"
-    }
+      id: '514e6346-08a6-4b95-b513-e6f9589051fc',
+    },
   ],
-  "children": []
+  children: [],
 })
 
 const testBtn = () => {
@@ -37,7 +35,11 @@ const testBtn = () => {
           <button @click="() => testBtn()">test</button>
         </div>
         <div class="right">
-          <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" :key="defaultPaneNode.id" />
+          <DragSplitPane
+            :root-pane-data="defaultPaneNode"
+            :pane-id="defaultPaneNode.id"
+            :key="defaultPaneNode.id"
+          />
         </div>
       </div>
     </div>

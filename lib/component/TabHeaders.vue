@@ -2,7 +2,7 @@
 import { inject, onMounted, useTemplateRef } from 'vue'
 import TabItem from './TabItem.vue'
 import {
-  DspInstanceMap,
+  type DspInstanceMap,
   instanceMapInjectKey,
   type PaneNode,
   paneNodeInjectKey,
@@ -10,7 +10,6 @@ import {
   type Tab,
 } from '../types'
 import { clearEmptyPane, getAllPaneTabs } from '../utils'
-import { clear } from 'console'
 
 const emit = defineEmits<{
   closeTab: [tabId: string]
@@ -43,7 +42,10 @@ const handleDrop = (e: DragEvent): void => {
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
     const tab = JSON.parse(dropData) as Tab
-    if (paneNodeData.tabs.length > 0 && tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id) {
+    if (
+      paneNodeData.tabs.length > 0 &&
+      tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id
+    ) {
       return
     }
     if (paneNodeData.tabs.find((_tab) => _tab.id === tab.id)) {
