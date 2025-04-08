@@ -43,7 +43,7 @@ const handleDrop = (e: DragEvent): void => {
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
     const tab = JSON.parse(dropData) as Tab
-    if (tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id) {
+    if (paneNodeData.tabs.length > 0 && tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id) {
       return
     }
     if (paneNodeData.tabs.find((_tab) => _tab.id === tab.id)) {
