@@ -16,7 +16,7 @@ import {
   TabInsertPanePosition,
   TabInsertPosition,
 } from './types'
-import { findPaneNodeById, getAllPaneTabs } from './utils'
+import { clearEmptyPane, findPaneNodeById, getAllPaneTabs } from './utils'
 import ResizeLine from './component/ResizeLine.vue'
 import TabHeaders from './component/TabHeaders.vue'
 import TabContent from './component/TabContent.vue'
@@ -154,6 +154,9 @@ const closeTab = (tabId: string) => {
   const wasActive = paneNode.activeTab === tabId // 检查关闭的是否为当前激活的标签
 
   paneNode.tabs.splice(index, 1)
+  if (paneNode.tabs.length === 0) {
+    clearEmptyPane(rootPaneNode)
+  }
 
   if (paneNode.tabs.length !== 0 && wasActive) {
     // 仅当关闭的是激活标签时调整激活状态
