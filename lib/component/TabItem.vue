@@ -26,7 +26,7 @@ const isActive = computed(() => props.tab.id === paneNode.activeTab)
 
 const isOverDropZone = ref(false)
 const insertPosition = ref<TabInsertPosition>(TabInsertPosition.Left)
-const tabItemRef = useTemplateRef('tabItemRef')
+const tabItemRef = useTemplateRef('tab-item-ref')
 
 const handleDragStart = (e: DragEvent): void => {
   if (e.dataTransfer) {
@@ -83,7 +83,7 @@ const calculateDropPosition = (e: DragEvent): void => {
 
 <template>
   <div
-    ref="tabItemRef"
+    ref="tab-item-ref"
     class="tab-item"
     :class="[
       isOverDropZone && insertPosition === TabInsertPosition.Left ? 'drop-left' : '',

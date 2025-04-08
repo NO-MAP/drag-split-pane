@@ -22,7 +22,7 @@ const loadedPaneTab = inject<string[]>(loadedPaneTabInjectKey)!
 const isOverDropZone = ref(false)
 const splitDirection: Ref<PaneDirection> = ref(PaneDirection.Horizontal)
 const insertPosition = ref(TabInsertPanePosition.Left)
-const tabContentRef = useTemplateRef('tabContentRef')
+const tabContentRef = useTemplateRef('tab-content-el')
 
 // 处理拖放事件
 const handleDragOver = (e: DragEvent): void => {
@@ -154,7 +154,7 @@ const calculateDropPosition = (e: DragEvent): void => {
 
 <template>
   <div
-    ref="tabContentRef"
+    ref="tab-content-el"
     class="tabs-content"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"

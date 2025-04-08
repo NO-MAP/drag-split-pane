@@ -15,7 +15,7 @@ const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
 const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
 
-const tabHeaderWrapperRef = useTemplateRef('tabHeaderWrapperRef')
+const tabHeaderWrapperRef = useTemplateRef('tab-header-wrapper-el')
 
 onMounted(() => {
   if (tabHeaderWrapperRef.value) {
@@ -68,7 +68,7 @@ const handleDrop = (e: DragEvent): void => {
 
 <template>
   <div
-    ref="tabHeaderWrapperRef"
+    ref="tab-header-wrapper-el"
     class="tab-header-wrapper"
     @dragover="handleDragOver"
     @drop="handleDrop"
