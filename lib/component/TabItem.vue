@@ -19,10 +19,6 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits<{
-  closeTab: [tabId: string]
-}>()
-
 const paneNode = inject<PaneNode>(paneNodeInjectKey)!
 const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
@@ -112,7 +108,11 @@ const calculateDropPosition = (e: DragEvent): void => {
       <CloseBtn
         @click.stop="
           () => {
-            emit('closeTab', tab.id)
+            const paneInstance = dspInstanceMap.get(paneNode.id)
+            if (paneInstance) {
+              paneInstance.closeTab(tab.id)
+            }
+            clearEmptyPane(rootPaneNode)
           }
         "
       />

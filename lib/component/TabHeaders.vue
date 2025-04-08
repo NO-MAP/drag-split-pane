@@ -11,10 +11,6 @@ import {
 } from '../types'
 import { clearEmptyPane, getAllPaneTabs } from '../utils'
 
-const emit = defineEmits<{
-  closeTab: [tabId: string]
-}>()
-
 const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
 const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
@@ -81,7 +77,6 @@ const handleDrop = (e: DragEvent): void => {
       v-for="tab in paneNodeData.tabs"
       :key="tab.id"
       :tab="tab"
-      @closeTab="(tabId: string) => emit('closeTab', tabId)"
     >
       {{ tab.id }}
     </TabItem>
