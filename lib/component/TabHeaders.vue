@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { inject, onMounted, useTemplateRef } from 'vue'
 import TabItem from './TabItem.vue'
-import { type PaneNode, paneNodeInjectKey, rootPaneNodeInjectKey, type Tab } from '../types'
+import {
+  DspInstanceMap,
+  instanceMapInjectKey,
+  type PaneNode,
+  paneNodeInjectKey,
+  rootPaneNodeInjectKey,
+  type Tab,
+} from '../types'
+import { clearEmptyPane, getAllPaneTabs } from '../utils'
+import { clear } from 'console'
 
 const emit = defineEmits<{
   closeTab: [tabId: string]
 }>()
 
-const rootPaneNodeData = inject<PaneNode>(rootPaneNodeInjectKey)!
+const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
+const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
 
 const tabHeaderWrapperRef = useTemplateRef('tabHeaderWrapperRef')
 
@@ -33,7 +43,27 @@ const handleDrop = (e: DragEvent): void => {
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
     const tab = JSON.parse(dropData) as Tab
-    console.log('drop tab', tab)
+    if (tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id) {
+      return
+    }
+    if (paneNodeData.tabs.find((_tab) => _tab.id === tab.id)) {
+      paneNodeData.activeTab = tab.id
+      // 调换位置
+      const tabIndex = paneNodeData.tabs.findIndex((_tab) => _tab.id === tab.id)
+      paneNodeData.tabs.splice(tabIndex, 1)
+      paneNodeData.tabs.push(tab)
+    } else {
+      // 先删除之前
+      const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+      if (!originPane) return
+      const originPaneInstance = dspInstanceMap.get(originPane.paneId)
+      if (!originPaneInstance) return
+      originPaneInstance.closeTab(tab.id)
+      // 添加到当前面板
+      paneNodeData.activeTab = tab.id
+      paneNodeData.tabs.push(tab)
+      clearEmptyPane(rootPaneNode)
+    }
   }
 }
 </script>
@@ -46,7 +76,7 @@ const handleDrop = (e: DragEvent): void => {
     @drop="handleDrop"
   >
     <TabItem
-      v-for="(tab, index) in paneNodeData.tabs"
+      v-for="tab in paneNodeData.tabs"
       :key="tab.id"
       :tab="tab"
       @closeTab="(tabId: string) => emit('closeTab', tabId)"

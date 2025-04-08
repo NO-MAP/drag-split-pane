@@ -10,7 +10,7 @@ import {
   TabInsertPosition,
 } from '../types'
 import CloseBtn from './CloseBtn.vue'
-import { getAllPaneTabs } from '../utils'
+import { clearEmptyPane, getAllPaneTabs } from '../utils'
 
 const props = defineProps({
   tab: {
@@ -68,6 +68,7 @@ const handleDrop = (e: DragEvent): void => {
     if (targetPaneInstance) {
       targetPaneInstance.insertTab(tab, props.tab.id, insertPosition.value)
     }
+    clearEmptyPane(rootPaneNode)
   }
 }
 
