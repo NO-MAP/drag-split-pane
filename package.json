@@ -1,6 +1,5 @@
 {
   "name": "drag-split-pane",
-  "private": true,
   "version": "0.0.1",
   "type": "module",
   "main": "dist/drag-split-pane.js",
@@ -10,6 +9,10 @@
     "README.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NO-MAP/drag-split-pane.git"
+  },
   "license": "MIT",
   "description": "A Vue 3 component for creating resizable split panes.",
   "keywords": [
