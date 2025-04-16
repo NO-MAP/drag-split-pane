@@ -2,6 +2,7 @@
 import { reactive } from 'vue'
 import { DragSplitPane } from '../lib/main'
 import { PaneDirection, type PaneNode } from '../lib/types'
+import CodeTab from './component/CodeTab.vue'
 
 const defaultPaneNode: PaneNode = reactive({
   id: 'pane-0',
@@ -35,11 +36,11 @@ const testBtn = () => {
           <button @click="() => testBtn()">test</button>
         </div>
         <div class="right">
-          <DragSplitPane
-            :root-pane-data="defaultPaneNode"
-            :pane-id="defaultPaneNode.id"
-            :key="defaultPaneNode.id"
-          />
+          <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" :key="defaultPaneNode.id">
+            <template #tab-content="{ tab }">
+              <CodeTab :key="tab.id" />
+            </template>
+          </DragSplitPane>
         </div>
       </div>
     </div>

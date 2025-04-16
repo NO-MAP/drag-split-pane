@@ -104,7 +104,7 @@ const handleResize = (index: number, delta: number): void => {
 
 const allPaneTabs = computed(() => {
   if (!isRoot) return [] as PaneTab[]
-  return getAllPaneTabs(paneNode).filter((pane) => loadedPaneTab.value.includes(pane.paneId))
+  return getAllPaneTabs(rootPaneNode).filter((pane) => loadedPaneTab.value.includes(pane.paneId))
 })
 
 let splitPaneElResizeObserver: ReturnType<typeof useResizeObserver> | undefined = undefined
@@ -244,6 +244,7 @@ defineExpose({
       <TabContent />
     </div>
   </div>
+  <div v-if="isRoot">{{ allPaneTabs }}</div>
   <KeepAlive v-if="isRoot">
     <Teleport v-for="tab in allPaneTabs" :key="tab.id" :to="`#tabContent_${tab.paneId}`">
       <div v-show="tab.id === tab.activeTab" class="tab-content">
