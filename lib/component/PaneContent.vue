@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { inject, nextTick, onMounted, ref, useTemplateRef, type Ref } from 'vue'
+import { inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, type Ref } from 'vue'
 import {
   type DspInstanceMap,
   instanceMapInjectKey,
@@ -18,11 +18,11 @@ import { v4 as uuidv4 } from 'uuid'
 const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
 const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
 const paneNode = inject<PaneNode>(paneNodeInjectKey)!
-const loadedPaneTab = inject<string[]>(loadedPaneTabInjectKey)!
+const loadedPaneTab = inject<Ref<string[]>>(loadedPaneTabInjectKey)!
 const isOverDropZone = ref(false)
 const splitDirection: Ref<PaneDirection> = ref(PaneDirection.Horizontal)
 const insertPosition = ref(TabInsertPanePosition.Left)
-const tabContentRef = useTemplateRef('tab-content-el')
+const tabContentRef = useTemplateRef('pane-content-el')
 
 // 处理拖放事件
 const handleDragOver = (e: DragEvent): void => {
@@ -36,12 +36,13 @@ const handleDragLeave = (): void => {
   isOverDropZone.value = false
 }
 
-const handleDrop = async (e: DragEvent) => {
+const handleDrop = (e: DragEvent) => {
   e.preventDefault()
   isOverDropZone.value = false
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
     const tab = JSON.parse(dropData) as Tab
+    debugger
     if (insertPosition.value === TabInsertPanePosition.Middle) {
       if (tab.id === paneNode.activeTab) {
         return
@@ -57,7 +58,7 @@ const handleDrop = async (e: DragEvent) => {
       if (originPaneInstance) {
         originPaneInstance.closeTab(tab.id)
       }
-      await nextTick()
+      // await nextTick()
       const paneInstance = dspInstanceMap.get(paneNode.id)
       if (paneInstance) {
         paneInstance.insertTab(tab, paneNode.activeTab, TabInsertPosition.Right)
@@ -74,7 +75,7 @@ const handleDrop = async (e: DragEvent) => {
       if (originPaneInstance) {
         originPaneInstance.closeTab(tab.id)
       }
-      await nextTick()
+      // await nextTick()
       const paneInstance = dspInstanceMap.get(paneNode.id)
       if (paneInstance) {
         paneInstance.insertPane(
@@ -90,13 +91,20 @@ const handleDrop = async (e: DragEvent) => {
         )
         paneInstance.doLayoutChildrenPane()
       }
+      // await nextTick()
     }
     clearEmptyPane(rootPaneNode)
   }
 }
 
 onMounted(() => {
-  loadedPaneTab.push(paneNode.id)
+  // console.log("paneContent mount")
+  loadedPaneTab.value.push(paneNode.id)
+})
+
+onBeforeUnmount(() => {
+  // console.log("paneContent unmount")
+  loadedPaneTab.value = loadedPaneTab.value.filter(id => id !== paneNode.id)
 })
 
 const calculateDropPosition = (e: DragEvent): void => {
@@ -153,34 +161,26 @@ const calculateDropPosition = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div
-    ref="tab-content-el"
-    class="tabs-content"
-    @dragover="handleDragOver"
-    @dragleave="handleDragLeave"
-    @drop="handleDrop"
-  >
+  <div ref="pane-content-el" class="pane-content" @dragover="handleDragOver" @dragleave="handleDragLeave"
+    @drop="handleDrop">
     <!-- 分屏指示器 -->
-    <div
-      v-if="isOverDropZone"
-      class="split-indicator"
-      :class="{
-        top: insertPosition === TabInsertPanePosition.Top,
-        bottom: insertPosition === TabInsertPanePosition.Bottom,
-        left: insertPosition === TabInsertPanePosition.Left,
-        right: insertPosition === TabInsertPanePosition.Right,
-        middle: insertPosition === TabInsertPanePosition.Middle,
-      }"
-    ></div>
+    <div v-if="isOverDropZone" class="split-indicator" :class="{
+      top: insertPosition === TabInsertPanePosition.Top,
+      bottom: insertPosition === TabInsertPanePosition.Bottom,
+      left: insertPosition === TabInsertPanePosition.Left,
+      right: insertPosition === TabInsertPanePosition.Right,
+      middle: insertPosition === TabInsertPanePosition.Middle,
+    }"></div>
 
     <!-- 当前面板内容 -->
-    <div>{{ paneNode.id }}</div>
-    <div :id="`tabContent_${paneNode.id}`" class="current-content"></div>
+    <div>paneNode.id --- {{ paneNode.id }}</div>
+    <div>tab.id --- {{ paneNode.activeTab }}</div>
+    <div :id="`paneContent_${paneNode.id}`" class="current-content"></div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.tabs-content {
+.pane-content {
   height: calc(100% - 32px);
   background-color: #676767;
   position: relative;

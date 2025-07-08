@@ -14,7 +14,8 @@ export function findPaneNodeById(root: PaneNode, targetId: string): PaneNode {
   throw new Error(`find paneNode failed::${targetId}`)
 }
 
-export const getAllPaneTabs = (paneNode: PaneNode): PaneTab[] => {
+export const getAllPaneTabs = (_paneNode: PaneNode): PaneTab[] => {
+  const paneNode = deepClone(_paneNode)
   // 将当前节点的每个 Tab 转换为 PaneTab 对象
   const currentTabs: PaneTab[] = paneNode.tabs.map((tab) => ({
     ...tab, // 保留原始 Tab 属性（type/id/filePath 或 type/id/url）
@@ -23,7 +24,7 @@ export const getAllPaneTabs = (paneNode: PaneNode): PaneTab[] => {
   }))
 
   // 递归处理子节点，合并结果
-  return [...currentTabs, ...paneNode.children.flatMap((child) => getAllPaneTabs(child))]
+  return [...currentTabs, ...paneNode.children.flatMap((child) => getAllPaneTabs(child))].sort((a, b) => a.id.localeCompare(b.id))
 }
 
 export function findParentPane(root: PaneNode, targetId: string): PaneNode | null {
@@ -85,3 +86,5 @@ export const clearEmptyPane = (paneNode: PaneNode): boolean => {
 
   return paneNode.tabs.length === 0 && paneNode.children.length === 0
 }
+
+export const deepClone = <T>(data: T) => JSON.parse(JSON.stringify(data)) as T

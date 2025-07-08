@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, provide, ref, useTemplateRef } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, provide, ref, useTemplateRef, watch } from 'vue'
 import {
   type ColorSetting,
   type DspInstanceMap,
@@ -16,13 +16,14 @@ import {
   TabInsertPanePosition,
   TabInsertPosition,
 } from './types'
-import { findPaneNodeById, getAllPaneTabs } from './utils'
+import { deepClone, findPaneNodeById, getAllPaneTabs } from './utils'
 import ResizeLine from './component/ResizeLine.vue'
-import TabHeaders from './component/TabHeaders.vue'
-import TabContent from './component/TabContent.vue'
+import PaneHeaders from './component/PaneHeaders.vue'
+import TabContent from './component/PaneContent.vue'
 import DragSplitPane from './DragSplitPane.vue'
 import { useResizeObserver } from '@vueuse/core'
 import { v4 as uuidv4 } from 'uuid'
+import CodeTab from '../src/component/CodeTab.vue'
 
 interface Props {
   colorSettings?: Partial<ColorSetting>
@@ -47,12 +48,12 @@ const mergedColors = computed(() => ({
 
 const variablesStyle = isRoot
   ? Object.entries(colorVariables).reduce(
-      (acc: Record<string, string>, [varName, propName]) => {
-        acc[varName] = mergedColors.value[propName]
-        return acc
-      },
-      {} as Record<string, string>,
-    )
+    (acc: Record<string, string>, [varName, propName]) => {
+      acc[varName] = mergedColors.value[propName]
+      return acc
+    },
+    {} as Record<string, string>,
+  )
   : {}
 
 const rootPaneNode = isRoot ? props.rootPaneData : inject<PaneNode>(rootPaneNodeInjectKey)!
@@ -62,7 +63,7 @@ provide<PaneNode>(paneNodeInjectKey, paneNode)
 const loadedPaneTab = ref<string[]>([])
 if (isRoot) {
   provide<PaneNode>(rootPaneNodeInjectKey, rootPaneNode)
-  provide(loadedPaneTabInjectKey, loadedPaneTab.value)
+  provide(loadedPaneTabInjectKey, loadedPaneTab)
 }
 
 const splitPaneElRef = useTemplateRef('split-pane-el')
@@ -104,7 +105,13 @@ const handleResize = (index: number, delta: number): void => {
 
 const allPaneTabs = computed(() => {
   if (!isRoot) return [] as PaneTab[]
-  return getAllPaneTabs(rootPaneNode).filter((pane) => loadedPaneTab.value.includes(pane.paneId))
+  return getAllPaneTabs(rootPaneNode)
+})
+
+watch(() => allPaneTabs.value, (value) => {
+  console.log('allPaneTabs changed', value)
+}, {
+  deep: true
 })
 
 let splitPaneElResizeObserver: ReturnType<typeof useResizeObserver> | undefined = undefined
@@ -178,7 +185,7 @@ const insertTab = (tab: Tab, neighborTabId: string, insertPosition: TabInsertPos
 }
 
 const insertPane = (newPane: PaneNode, tabInsertPanePosition: TabInsertPanePosition) => {
-  const originalPane = { ...paneNode }
+  const originalPane = deepClone(paneNode)
   paneNode.id = uuidv4()
   paneNode.children = [TabInsertPanePosition.Bottom, TabInsertPanePosition.Right].includes(
     tabInsertPanePosition,
@@ -205,53 +212,47 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    ref="split-pane-el"
-    class="drag-split-pane"
-    :style="variablesStyle"
-    :class="{
-      'root-pane': isRoot,
-    }"
-    :id="`dragSplitPane_${paneNode.id}`"
-  >
-    <div
-      v-if="paneNode.children.length > 0"
-      class="children-pane"
-      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']"
-    >
-      <div
-        v-for="(pane, index) in paneNode.children"
-        :key="pane.id"
-        class="pane-wrapper"
-        :style="{
-          width:
-            paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
-          height:
-            paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
-        }"
-      >
+  <div ref="split-pane-el" class="drag-split-pane" :style="variablesStyle" :class="{
+    'root-pane': isRoot,
+  }" :id="`dragSplitPane_${paneNode.id}`">
+    <div v-if="paneNode.children.length > 0" class="children-pane"
+      :class="[paneNode.direction === PaneDirection.Vertical ? 't-m-b' : 'l-m-r']">
+      <div v-for="(pane, index) in paneNode.children" :key="pane.id" class="pane-wrapper" :style="{
+        width:
+          paneNode.direction === PaneDirection.Vertical ? '100%' : `${paneNode.size[index]}px`,
+        height:
+          paneNode.direction === PaneDirection.Horizontal ? '100%' : `${paneNode.size[index]}px`,
+      }">
         <DragSplitPane :pane-id="pane.id" :key="pane.id" />
-        <ResizeLine
-          v-if="index < paneNode.children.length - 1"
+        <ResizeLine v-if="index < paneNode.children.length - 1"
           :direction="paneNode.direction === PaneDirection.Vertical ? 'vertical' : 'horizontal'"
           :position="paneNode.direction === PaneDirection.Vertical ? 'bottom' : 'right'"
-          @resize="(delta: number) => handleResize(index, delta)"
-        />
+          @resize="(delta: number) => handleResize(index, delta)" />
       </div>
     </div>
     <div v-if="paneNode.tabs.length > 0" class="tabs">
-      <TabHeaders />
+      <PaneHeaders />
       <TabContent />
     </div>
   </div>
-  <div v-if="isRoot">{{ allPaneTabs }}</div>
-  <KeepAlive v-if="isRoot">
-    <Teleport v-for="tab in allPaneTabs" :key="tab.id" :to="`#tabContent_${tab.paneId}`">
-      <div v-show="tab.id === tab.activeTab" class="tab-content">
-        <slot name="tab-content" :tab="tab" />
+  <template v-if="isRoot">
+    <!-- <KeepAlive>
+      <Teleport v-for="tab in allPaneTabs" :key="tab.id"
+        :to="loadedPaneTab.includes(tab.paneId) ? `#paneContent_${tab.paneId}` : `#unLoadedSpace`">
+        <div :key="tab.id" class="tab-content">
+          <p>{{ tab.id }}</p>
+          <slot name="tab-content" :tab="tab" />
+        </div>
+      </Teleport>
+    </KeepAlive> -->
+    <div style="position: fixed; bottom: 0; left: 0; background-color: white;">
+      <div v-for="tab in allPaneTabs" style="height: 200px; width: 200px; border: 1px solid #eee" :key="tab.id"
+        class="tab-content">
+        <p>tab.id === {{ tab.id }}</p>
+        <CodeTab />
       </div>
-    </Teleport>
-  </KeepAlive>
+    </div>
+  </template>
 </template>
 
 <style lang="scss" scoped>
@@ -274,7 +275,7 @@ defineExpose({
     &.t-m-b {
       flex-direction: column;
 
-      > .pane-wrapper {
+      >.pane-wrapper {
         position: relative;
         width: 100%;
         border-bottom: 1px solid rgb(0, 0, 0);
@@ -288,7 +289,7 @@ defineExpose({
     &.l-m-r {
       flex-direction: row;
 
-      > .pane-wrapper {
+      >.pane-wrapper {
         position: relative;
         height: 100%;
         border-right: 1px solid rgb(0, 0, 0);

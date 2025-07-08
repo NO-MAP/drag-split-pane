@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { DragSplitPane } from '../lib/main'
 import { PaneDirection, type PaneNode } from '../lib/types'
 import CodeTab from './component/CodeTab.vue'
@@ -14,10 +14,10 @@ const defaultPaneNode: PaneNode = reactive({
       id: 'activeTab1',
     },
     {
-      id: '45e6fa6a-20b8-49c9-92a0-67eb9d060fee',
+      id: 'activeTab2',
     },
     {
-      id: '514e6346-08a6-4b95-b513-e6f9589051fc',
+      id: 'activeTab3',
     },
   ],
   children: [],
@@ -26,6 +26,11 @@ const defaultPaneNode: PaneNode = reactive({
 const testBtn = () => {
   console.log(JSON.parse(JSON.stringify(defaultPaneNode)))
 }
+
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
 </script>
 
 <template>
@@ -34,12 +39,14 @@ const testBtn = () => {
       <div class="content2">
         <div class="left">
           <button @click="() => testBtn()">test</button>
+          <div id="unLoadedSpace"></div>
         </div>
         <div class="right">
-          <DragSplitPane :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id" :key="defaultPaneNode.id">
-            <template #tab-content="{ tab }">
+          <DragSplitPane v-if="isMounted" :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id"
+            :key="defaultPaneNode.id">
+            <!-- <template #tab-content="{ tab }">
               <CodeTab :key="tab.id" />
-            </template>
+            </template> -->
           </DragSplitPane>
         </div>
       </div>
