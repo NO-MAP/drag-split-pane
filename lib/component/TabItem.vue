@@ -83,7 +83,10 @@ const calculateDropPosition = (e: DragEvent): void => {
     </div>
     <div
       class="h-full shrink-0 w-[22px] flex items-center justify-center opacity-0 hover:opacity-100 group-[.active]:opacity-100">
-      <CloseBtn @click.stop="pane.closeWindow(window.id)" />
+      <CloseBtn @click.stop="() => {
+        pane.closeWindow(window.id)
+        WindowManager.instance.clearEmptyPane()
+      }" />
     </div>
   </div>
 </template>

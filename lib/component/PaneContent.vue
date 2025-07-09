@@ -130,80 +130,20 @@ const calculateDropPosition = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div ref="pane-content-el" class="pane-content" @dragover="handleDragOver" @dragleave="handleDragLeave"
-    @drop="handleDrop">
+  <div ref="pane-content-el" class="relative h-[calc(100%-32px)] bg-gray-600 overflow-hidden" @dragover="handleDragOver"
+    @dragleave="handleDragLeave" @drop="handleDrop">
     <!-- 分屏指示器 -->
-    <div v-if="isOverDropZone" class="split-indicator" :class="{
-      top: insertPosition === WindowInsertPanePosition.Top,
-      bottom: insertPosition === WindowInsertPanePosition.Bottom,
-      left: insertPosition === WindowInsertPanePosition.Left,
-      right: insertPosition === WindowInsertPanePosition.Right,
-      middle: insertPosition === WindowInsertPanePosition.Middle,
+    <div v-if="isOverDropZone" class="absolute bg-purple-800 opacity-50 pointer-events-none z-100" :class="{
+      'top-0 left-0 h-1/2 w-full': insertPosition === WindowInsertPanePosition.Top,
+      'bottom-0 left-0 h-1/2 w-full': insertPosition === WindowInsertPanePosition.Bottom,
+      'left-0 top-0 w-1/2 h-full': insertPosition === WindowInsertPanePosition.Left,
+      'right-0 top-0 w-1/2 h-full': insertPosition === WindowInsertPanePosition.Right,
+      'inset-0 h-full w-full': insertPosition === WindowInsertPanePosition.Middle,
     }"></div>
 
     <!-- 当前面板内容 -->
     <div>pane.id --- {{ pane.id }}</div>
     <div>pane.activeWindowId --- {{ pane.activeWindowId }}</div>
-    <div :id="`paneContent_${pane.id}`" class="current-content"></div>
+    <div :id="`paneContent_${pane.id}`" class="w-full h-full overflow-hidden"></div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.pane-content {
-  height: calc(100% - 32px);
-  background-color: #676767;
-  position: relative;
-  overflow: hidden;
-
-  .split-indicator {
-    position: absolute;
-    background-color: #4e3761;
-    opacity: 0.5;
-    pointer-events: none;
-    z-index: 100;
-
-    // 四个边定位基础样式
-    &.top {
-      top: 0;
-      left: 0;
-      height: 50%;
-      width: 100%;
-    }
-
-    &.bottom {
-      bottom: 0;
-      left: 0;
-      height: 50%;
-      width: 100%;
-    }
-
-    &.left {
-      left: 0;
-      top: 0;
-      width: 50%;
-      height: 100%;
-    }
-
-    &.right {
-      right: 0;
-      top: 0;
-      width: 50%;
-      height: 100%;
-    }
-
-    // 中间状态样式
-    &.middle {
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-    }
-  }
-
-  .current-content {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-}
-</style>

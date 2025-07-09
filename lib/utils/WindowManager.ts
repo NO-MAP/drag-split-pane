@@ -1,11 +1,11 @@
-import { ref } from "vue"
+import { ref, type Ref } from "vue"
 import { Pane, type PaneData } from "./Pane"
 import { Window } from './Window'
 
 export class WindowManager {
   private static _instance?: WindowManager = undefined
   private _rootPaneRef = ref(new Pane())
-  readyDestroyWindows: Window[] = []
+  private _readyDestroyWindows: Ref<Window[]> = ref([])
 
   public static get instance() {
     if (this._instance === undefined) {
@@ -16,6 +16,10 @@ export class WindowManager {
 
   public get rootPane() {
     return this._rootPaneRef.value as Pane
+  }
+
+  public get readyDestroyWindows() {
+    return this._readyDestroyWindows.value
   }
 
   setRootPane(paneData: PaneData) {
@@ -104,14 +108,14 @@ export class WindowManager {
       const parentTotalSize = pane.size[0] // 父节点当前总尺寸
 
       // 提升子节点的属性到父节点
-      pane.activeWindowId = onlyChild.activeWindowId
+      onlyChild.windows.map(window => {
+        pane.insertWindow(window)
+      })
       pane.direction = onlyChild.direction // 继承子节点的方向
       pane.children = [...onlyChild.children]
       pane.size = onlyChild.children.length > 0 ? [...onlyChild.size] : [parentTotalSize] // 保持尺寸
       pane.id = onlyChild.id
-      onlyChild.windows.map(window => {
-        pane.insertWindow(window)
-      })
+      pane.activeWindowId = onlyChild.activeWindowId
 
       // 提升后，可能需要进一步清理新的子节点
       // 递归处理当前节点，因为子节点可能仍有可合并的情况

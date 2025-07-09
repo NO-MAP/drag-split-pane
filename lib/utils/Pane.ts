@@ -61,7 +61,6 @@ export class Pane {
         const insertIndex = insertPosition === WindowInsertPosition.Left ? index : index + 1
         this.activeWindowId = window.id
         this.windows.splice(insertIndex, 0, window)
-        return true
       }
     }
     return window

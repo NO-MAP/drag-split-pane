@@ -60,14 +60,15 @@ const handleDrop = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div ref="tab-header-wrapper-el" class="tab-header-wrapper" @dragover="handleDragOver" @drop="handleDrop">
+  <div ref="tab-header-wrapper-el" class="h-8 w-full flex flex-nowrap overflow-y-hidden overflow-x-scroll bg-gray-400"
+    @dragover="handleDragOver" @drop="handleDrop">
     <TabItem v-for="window in pane.windows" :key="window.id" :window="window" :pane="pane">
       {{ window.id }}
     </TabItem>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 /* 设置滚动条整体样式 */
 ::-webkit-scrollbar {
   width: 4px;
@@ -92,19 +93,5 @@ const handleDrop = (e: DragEvent): void => {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
   /* 滑块悬停颜色 */
-}
-
-.tab-header-wrapper {
-  height: 32px;
-  width: 100%;
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-y: hidden;
-  overflow-x: scroll;
-  background-color: #c0c0c0;
-
-  >.tab-item:last-child {
-    border-right-color: transparent;
-  }
 }
 </style>

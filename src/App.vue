@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { DragSplitPane } from '../lib/main'
 import { PaneDirection } from '../lib/types'
 import CodeTab from './component/CodeTab.vue'
@@ -21,7 +21,8 @@ const defaultPaneData: PaneData = {
 WindowManager.instance.setRootPane(defaultPaneData)
 
 const testBtn = () => {
-  console.log(JSON.parse(JSON.stringify(rootPane.value)))
+  console.log(rootPane.value)
+  console.log(WindowManager.instance.readyDestroyWindows)
 }
 
 onMounted(() => {
@@ -42,9 +43,9 @@ const rootPane = computed(() => {
         </div>
         <div class="flex-grow h-full border border-[#000333] border-l-0 bg-[#c1c1c1]">
           <DragSplitPane :pane="rootPane">
-            <!-- <template #tab-content="{ tab }">
+            <template #tab-content="{ tab }">
               <CodeTab :key="tab.id" />
-            </template> -->
+            </template>
           </DragSplitPane>
         </div>
       </div>

@@ -89,15 +89,6 @@ export enum WindowInsertPosition {
   Right = 'Right',
 }
 
-export interface Tab {
-  id: string
-}
-
-export type PaneTab = Tab & {
-  paneId: string
-  activeTab: string
-}
-
 export enum WindowInsertPanePosition {
   Top = 'Top',
   Right = 'Right',
@@ -106,29 +97,7 @@ export enum WindowInsertPanePosition {
   Middle = 'Middle',
 }
 
-export interface DragSplitPaneIns {
-  closeTab: (tabId: string) => boolean
-  insertTab: (tab: Tab, neighborTabId: string, insertPosition: WindowInsertPosition) => boolean
-  insertPane: (newPane: PaneNode, tabInsertPanePosition: WindowInsertPanePosition) => boolean
-  doLayoutChildrenPane: () => void
-}
-
-export const rootPaneNodeInjectKey = 'dspRootPaneNode'
-export const paneNodeInjectKey = 'dspPaneNode'
-export const loadedPaneTabInjectKey = 'dspLoadedPaneTab'
-export const instanceMapInjectKey = 'dspInstanceMap'
-export type DspInstanceMap = Map<string, DragSplitPaneIns>
-
 export enum PaneDirection {
   Vertical = 'Vertical', // 垂直
   Horizontal = 'Horizontal', // 水平,
-}
-
-export interface PaneNode {
-  id: string
-  tabs: Tab[]
-  activeTab: string
-  direction: PaneDirection
-  children: PaneNode[]
-  size: number[]
 }

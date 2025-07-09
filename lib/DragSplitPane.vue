@@ -118,6 +118,12 @@ onBeforeUnmount(() => {
     </div>
   </div>
   <template v-if="isRoot">
-    <!-- 根模板内容 -->
+    <div style="position: fixed; bottom: 0; left: 0; background-color: white;">
+      <div v-for="tab in allPaneTabs" style="height: 200px; width: 200px; border: 1px solid #eee" :key="tab.id"
+        class="tab-content">
+        <p>tab.id === {{ tab.id }}</p>
+        <CodeTab />
+      </div>
+    </div>
   </template>
 </template>

@@ -74,67 +74,19 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="resize-handle" :class="[direction, position]" @mousedown="startResize"></div>
+  <div
+    class="absolute z-50 bg-transparent transition-colors duration-100"
+    :class="{
+      'w-full h-1 cursor-row-resize': direction === 'vertical',
+      'h-full w-1 cursor-col-resize': direction === 'horizontal',
+      'top-0 -translate-y-1/2': direction === 'vertical' && position === 'top',
+      'bottom-0 translate-y-1/2': direction === 'vertical' && position === 'bottom',
+      'left-0 -translate-x-1/2': direction === 'horizontal' && position === 'left',
+      'right-0 top-0 translate-x-1/2': direction === 'horizontal' && position === 'right',
+      'hover:bg-blue-500': !isDragging,
+      'bg-blue-500': isDragging,
+      'cursor-[inherit] select-none': isDragging
+    }"
+    @mousedown="startResize"
+  ></div>
 </template>
-
-<style scoped lang="scss">
-.resize-handle {
-  position: absolute;
-  z-index: 50;
-  background-color: transparent;
-  transition-property: background-color;
-  transition-duration: 100ms;
-
-  // 通用方向样式
-  &.vertical {
-    width: 100%;
-    height: 4px; // Tailwind h-1 ≈ 0.25rem = 4px
-    cursor: row-resize;
-
-    &:hover,
-    &.dragging {
-      background-color: #3b82f6; // Tailwind blue-500
-    }
-
-    // 垂直方向位置
-    &.top {
-      top: -1px; // Tailwind -top-px
-      transform: translateY(-50%);
-    }
-
-    &.bottom {
-      bottom: -1px; // Tailwind -bottom-px
-      transform: translateY(50%);
-    }
-  }
-
-  &.horizontal {
-    height: 100%;
-    width: 4px; // Tailwind w-1
-    cursor: col-resize;
-
-    &:hover,
-    &.dragging {
-      background-color: #3b82f6;
-    }
-
-    // 水平方向位置
-    &.left {
-      left: -1px;
-      transform: translateX(-50%);
-    }
-
-    &.right {
-      right: -1px;
-      top: 0;
-      transform: translateX(50%);
-    }
-  }
-
-  // 拖拽时强制显示光标
-  &.dragging {
-    cursor: inherit !important;
-    user-select: none;
-  }
-}
-</style>
