@@ -66,18 +66,16 @@ export class WindowManager {
   }
 
   findPaneByWindowId(windowId: string): Pane | undefined {
-    const queue: Pane[] = [this.rootPane]
+    const queue: Pane[] = [this.rootPane];
+
     while (queue.length > 0) {
-      const currentPane = queue.shift()!
-      const windowIds = currentPane.windows.map(window => window.id)
-
-      if (windowIds.includes(windowId)) {
-        return currentPane
+      const currentPane = queue.shift()!;
+      if (currentPane.windows.some(window => window.id === windowId)) {
+        return currentPane;
       }
-
-      queue.push(...currentPane.children)
+      queue.push(...currentPane.children);
     }
-    return undefined
+    return undefined; // 未找到
   }
 
   clearEmptyPane(_pane?: Pane) {

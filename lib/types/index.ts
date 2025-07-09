@@ -84,11 +84,6 @@ export const colorVariables = {
 // 类型辅助函数
 export type CSSVariableName = keyof typeof colorVariables
 
-export enum TabInsertPosition {
-  Left = 'Left',
-  Right = 'Right',
-}
-
 export enum WindowInsertPosition {
   Left = 'Left',
   Right = 'Right',
@@ -113,7 +108,7 @@ export enum WindowInsertPanePosition {
 
 export interface DragSplitPaneIns {
   closeTab: (tabId: string) => boolean
-  insertTab: (tab: Tab, neighborTabId: string, insertPosition: TabInsertPosition) => boolean
+  insertTab: (tab: Tab, neighborTabId: string, insertPosition: WindowInsertPosition) => boolean
   insertPane: (newPane: PaneNode, tabInsertPanePosition: WindowInsertPanePosition) => boolean
   doLayoutChildrenPane: () => void
 }

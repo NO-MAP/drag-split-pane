@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import { computed, ref, useTemplateRef } from 'vue'
 import {
-  TabInsertPosition,
+  WindowInsertPosition,
 } from '../types'
 import CloseBtn from './CloseBtn.vue'
-import type { Window } from '../utils/Window'
+import type { Window, WindowData } from '../utils/Window'
 import type { Pane } from '../utils/Pane'
+import { WindowManager } from '../utils/WindowManager'
 
 interface Props {
   window: Window,
@@ -17,7 +18,7 @@ const props = defineProps<Props>()
 const isActive = computed(() => props.window.id === props.pane.activeWindowId)
 
 const isOverDropZone = ref(false)
-const insertPosition = ref<TabInsertPosition>(TabInsertPosition.Left)
+const insertPosition = ref<WindowInsertPosition>(WindowInsertPosition.Left)
 const tabItemRef = useTemplateRef('tab-item-ref')
 
 const handleDragStart = (e: DragEvent): void => {
@@ -41,26 +42,18 @@ const handleDragLeave = (): void => {
 const handleDrop = (e: DragEvent): void => {
   e.preventDefault()
   isOverDropZone.value = false
-
-  return
-
-  // if (e.dataTransfer) {
-  //   const dropData = e.dataTransfer?.getData('application/json')
-  //   const tab = JSON.parse(dropData) as Tab
-  //   if (tab.id === props.tab.id) return
-  //   // 先删除之前
-  //   const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
-  //   if (!originPane) return
-  //   const originPaneInstance = dspInstanceMap.get(originPane.paneId)
-  //   if (originPaneInstance) {
-  //     originPaneInstance.closeTab(tab.id)
-  //   }
-  //   const targetPaneInstance = dspInstanceMap.get(paneNode.id)
-  //   if (targetPaneInstance) {
-  //     targetPaneInstance.insertTab(tab, props.tab.id, insertPosition.value)
-  //   }
-  //   clearEmptyPane(rootPaneNode)
-  // }
+  if (e.dataTransfer) {
+    const dropData = e.dataTransfer?.getData('application/json')
+    const windowData = JSON.parse(dropData) as WindowData
+    if (windowData.id === props.window.id) return
+    const originPane = WindowManager.instance.findPaneByWindowId(windowData.id)
+    if (!originPane) return
+    const closedWindow = originPane.closeWindow(windowData.id)
+    if (closedWindow) {
+      props.pane.insertWindow(closedWindow, insertPosition.value, props.window.id)
+    }
+    WindowManager.instance.clearEmptyPane()
+  }
 }
 
 // 动态计算放置位置
@@ -69,119 +62,28 @@ const calculateDropPosition = (e: DragEvent): void => {
   const rect = tabItemRef.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   if (x < rect.width / 2) {
-    insertPosition.value = TabInsertPosition.Left
+    insertPosition.value = WindowInsertPosition.Left
   } else {
-    insertPosition.value = TabInsertPosition.Right
+    insertPosition.value = WindowInsertPosition.Right
   }
 }
 </script>
 
 <template>
-  <div ref="tab-item-ref" class="tab-item" :class="[
-    isOverDropZone && insertPosition === TabInsertPosition.Left ? 'drop-left' : '',
-    isOverDropZone && insertPosition === TabInsertPosition.Right ? 'drop-right' : '',
-    isActive ? 'active' : '',
-  ]" draggable="true" @dragstart.stop="handleDragStart" @dragleave.stop="handleDragLeave"
-    @dragover.stop="handleDragOver" @drop.stop="handleDrop" @click.stop="
-      () => {
-        pane.activeWindowId = window.id
-      }
-    ">
-    <div class="content">
+  <div ref="tab-item-ref"
+    class="flex items-center flex-nowrap shrink-0 h-full px-1 border border-transparent border-r-black relative cursor-pointer select-none min-w-[100px] max-w-[200px] basis-[150px] overflow-visible"
+    :class="[
+      isOverDropZone && insertPosition === WindowInsertPosition.Left ? 'after:absolute after:block after:h-[calc(100%+2px)] after:w-1 after:bg-white after:top-[-2px] after:left-[-4px] after:z-[5]' : '',
+      isOverDropZone && insertPosition === WindowInsertPosition.Right ? 'after:absolute after:block after:h-[calc(100%+2px)] after:w-1 after:bg-white after:top-[-2px] after:right-[-2px] after:z-[5]' : '',
+      isActive ? 'bg-[#dbdbdb]' : 'bg-[#999999] hover:bg-[#b4b4b4]',
+    ]" draggable="true" @dragstart.stop="handleDragStart" @dragleave.stop="handleDragLeave"
+    @dragover.stop="handleDragOver" @drop.stop="handleDrop" @click.stop="pane.activeWindowId = window.id">
+    <div class="h-full shrink-0 w-[calc(100%-22px)] flex items-center overflow-hidden text-ellipsis whitespace-nowrap">
       {{ window.id }}
     </div>
-    <div class="operation">
-      <CloseBtn @click.stop="
-        () => {
-          pane.closeWindow(window.id)
-        }
-      " />
+    <div
+      class="h-full shrink-0 w-[22px] flex items-center justify-center opacity-0 hover:opacity-100 group-[.active]:opacity-100">
+      <CloseBtn @click.stop="pane.closeWindow(window.id)" />
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.tab-item {
-  background-color: #999999;
-  flex-shrink: 0;
-  padding: 0 4px;
-  height: 100%;
-  flex-basis: 150px;
-  min-width: 100px;
-  max-width: 200px;
-  overflow: visible;
-  border: 1px solid transparent;
-  border-right-color: #000;
-  user-select: none;
-  position: relative;
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #b4b4b4;
-
-    .operation {
-      opacity: 1;
-    }
-  }
-
-  &.active {
-    background-color: #dbdbdb;
-
-    .operation {
-      opacity: 1;
-    }
-  }
-
-  &.drop-left {
-    &::after {
-      position: absolute;
-      display: block;
-      height: calc(100% + 2px);
-      width: 4px;
-      background-color: white;
-      top: -2px;
-      left: -4px;
-      z-index: 5;
-      content: '';
-    }
-  }
-
-  &.drop-right {
-    &::after {
-      position: absolute;
-      display: block;
-      height: calc(100% + 2px);
-      width: 4px;
-      background-color: white;
-      top: -2px;
-      right: -2px;
-      z-index: 5;
-      content: '';
-    }
-  }
-
-  .content {
-    height: 100%;
-    flex-shrink: 0;
-    width: calc(100% - 22px);
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .operation {
-    height: 100%;
-    flex-shrink: 0;
-    width: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-  }
-}
-</style>
