@@ -12,6 +12,7 @@ import { useResizeObserver } from '@vueuse/core'
 import type { Pane } from './utils/Pane'
 import PaneHeaders from './component/PaneHeaders.vue'
 import PaneContent from './component/PaneContent.vue'
+import CodeTab from '../src/component/CodeTab.vue'
 
 interface Props {
   colorSettings?: Partial<ColorSetting>
@@ -119,11 +120,10 @@ onBeforeUnmount(() => {
   </div>
   <template v-if="isRoot">
     <div style="position: fixed; bottom: 0; left: 0; background-color: white;">
-      <div v-for="tab in allPaneTabs" style="height: 200px; width: 200px; border: 1px solid #eee" :key="tab.id"
+      <!-- <div v-for="tab in allPaneTabs" style="height: 200px; width: 200px; border: 1px solid #eee" :key="tab.id"
         class="tab-content">
-        <p>tab.id === {{ tab.id }}</p>
         <CodeTab />
-      </div>
+      </div> -->
     </div>
   </template>
 </template>

@@ -15,6 +15,9 @@ const defaultPaneData: PaneData = {
     { id: 'activeTab1', windowData: undefined },
     { id: 'activeTab2', windowData: undefined },
     { id: 'activeTab3', windowData: undefined },
+    { id: 'activeTab4', windowData: undefined },
+    { id: 'activeTab5', windowData: undefined },
+    { id: 'activeTab6', windowData: undefined },
   ],
   children: [],
 }

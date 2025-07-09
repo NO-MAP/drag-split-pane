@@ -70,23 +70,111 @@ const calculateDropPosition = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div ref="tab-item-ref"
-    class="flex items-center flex-nowrap shrink-0 h-full px-1 border border-transparent border-r-black relative cursor-pointer select-none min-w-[100px] max-w-[200px] basis-[150px] overflow-visible"
-    :class="[
-      isOverDropZone && insertPosition === WindowInsertPosition.Left ? 'after:absolute after:block after:h-[calc(100%+2px)] after:w-1 after:bg-white after:top-[-2px] after:left-[-4px] after:z-[5]' : '',
-      isOverDropZone && insertPosition === WindowInsertPosition.Right ? 'after:absolute after:block after:h-[calc(100%+2px)] after:w-1 after:bg-white after:top-[-2px] after:right-[-2px] after:z-[5]' : '',
-      isActive ? 'bg-[#dbdbdb]' : 'bg-[#999999] hover:bg-[#b4b4b4]',
-    ]" draggable="true" @dragstart.stop="handleDragStart" @dragleave.stop="handleDragLeave"
-    @dragover.stop="handleDragOver" @drop.stop="handleDrop" @click.stop="pane.activeWindowId = window.id">
-    <div class="h-full shrink-0 w-[calc(100%-22px)] flex items-center overflow-hidden text-ellipsis whitespace-nowrap">
+  <div ref="tab-item-ref" class="tab-item" :class="[
+    isOverDropZone && insertPosition === WindowInsertPosition.Left ? 'drop-left' : '',
+    isOverDropZone && insertPosition === WindowInsertPosition.Right ? 'drop-right' : '',
+    isActive ? 'active' : '',
+  ]" draggable="true" @dragstart.stop="handleDragStart" @dragleave.stop="handleDragLeave"
+    @dragover.stop="handleDragOver" @drop.stop="handleDrop" @click.stop="
+      () => {
+        pane.activeWindowId = window.id
+      }
+    ">
+    <div class="content">
       {{ window.id }}
     </div>
-    <div
-      class="h-full shrink-0 w-[22px] flex items-center justify-center opacity-0 hover:opacity-100 group-[.active]:opacity-100">
-      <CloseBtn @click.stop="() => {
-        pane.closeWindow(window.id)
-        WindowManager.instance.clearEmptyPane()
-      }" />
+    <div class="operation">
+      <CloseBtn @click.stop="
+        () => {
+          pane.closeWindow(window.id)
+        }
+      " />
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.tab-item {
+  background-color: #999999;
+  flex-shrink: 0;
+  padding: 0 4px;
+  height: 100%;
+  flex-basis: 150px;
+  min-width: 100px;
+  max-width: 200px;
+  overflow: visible;
+  border: 1px solid transparent;
+  border-right-color: #000;
+  user-select: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #b4b4b4;
+
+    .operation {
+      opacity: 1;
+    }
+  }
+
+  &.active {
+    background-color: #dbdbdb;
+
+    .operation {
+      opacity: 1;
+    }
+  }
+
+  &.drop-left {
+    &::after {
+      position: absolute;
+      display: block;
+      height: calc(100% + 2px);
+      width: 4px;
+      background-color: white;
+      top: -2px;
+      left: -4px;
+      z-index: 5;
+      content: '';
+    }
+  }
+
+  &.drop-right {
+    &::after {
+      position: absolute;
+      display: block;
+      height: calc(100% + 2px);
+      width: 4px;
+      background-color: white;
+      top: -2px;
+      right: -2px;
+      z-index: 5;
+      content: '';
+    }
+  }
+
+  .content {
+    height: 100%;
+    flex-shrink: 0;
+    width: calc(100% - 22px);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .operation {
+    height: 100%;
+    flex-shrink: 0;
+    width: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+}
+</style>
