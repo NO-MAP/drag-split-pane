@@ -1,49 +1,47 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { DragSplitPane } from '../lib/main'
-import { PaneDirection, type PaneNode } from '../lib/types'
+import { PaneDirection } from '../lib/types'
 import CodeTab from './component/CodeTab.vue'
+import type { PaneData } from '../lib/utils/Pane'
+import { WindowManager } from '../lib/utils/WindowManager'
 
-const defaultPaneNode: PaneNode = reactive({
+const defaultPaneData: PaneData = {
   id: 'pane-0',
   direction: PaneDirection.Horizontal,
   size: [1274],
-  activeTab: 'activeTab1',
-  tabs: [
-    {
-      id: 'activeTab1',
-    },
-    {
-      id: 'activeTab2',
-    },
-    {
-      id: 'activeTab3',
-    },
+  activeWindowId: 'activeTab1',
+  windows: [
+    { id: 'activeTab1', windowData: undefined },
+    { id: 'activeTab2', windowData: undefined },
+    { id: 'activeTab3', windowData: undefined },
   ],
   children: [],
-})
+}
+WindowManager.instance.setRootPane(defaultPaneData)
 
 const testBtn = () => {
-  console.log(JSON.parse(JSON.stringify(defaultPaneNode)))
+  console.log(JSON.parse(JSON.stringify(rootPane.value)))
 }
 
-const isMounted = ref(false)
 onMounted(() => {
-  isMounted.value = true
+})
+
+const rootPane = computed(() => {
+  return WindowManager.instance.rootPane
 })
 </script>
 
 <template>
-  <div class="example-wrapper">
-    <div class="content1">
-      <div class="content2">
-        <div class="left">
-          <button @click="() => testBtn()">test</button>
+  <div class="h-screen w-screen p-5 box-border shadow-[0_0_4px_#000]">
+    <div class="h-full w-full shadow-[0_0_8px_#000] box-border p-2.5">
+      <div class="h-full w-full flex flex-nowrap">
+        <div class="w-[199px] h-full border border-[#000333] bg-white">
+          <button @click="testBtn" class="m-2 p-2 bg-gray-200 rounded">test</button>
           <div id="unLoadedSpace"></div>
         </div>
-        <div class="right">
-          <DragSplitPane v-if="isMounted" :root-pane-data="defaultPaneNode" :pane-id="defaultPaneNode.id"
-            :key="defaultPaneNode.id">
+        <div class="flex-grow h-full border border-[#000333] border-l-0 bg-[#c1c1c1]">
+          <DragSplitPane :pane="rootPane">
             <!-- <template #tab-content="{ tab }">
               <CodeTab :key="tab.id" />
             </template> -->
@@ -54,43 +52,6 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
-.example-wrapper {
-  height: 100vh;
-  width: 100vw;
-  padding: 20px;
-  box-sizing: border-box;
-  box-shadow: 0 0 4px #000;
-
-  .content1 {
-    height: 100%;
-    width: 100%;
-    box-shadow: 0 0 8px #000;
-    box-sizing: border-box;
-    padding: 10px;
-  }
-
-  .content2 {
-    height: 100%;
-    width: 100%;
-    flex-wrap: nowrap;
-    flex-wrap: nowrap;
-    display: flex;
-  }
-
-  .left {
-    width: 199px;
-    height: 100%;
-    border: 1px solid #000333;
-    background-color: white;
-  }
-
-  .right {
-    width: calc(100% - 200px);
-    height: 100%;
-    border: 1px solid #000333;
-    border-left: none;
-    background-color: #c1c1c1;
-  }
-}
+<style scoped>
+/* 所有SCSS样式已转换为Tailwind类，可以删除原有样式 */
 </style>

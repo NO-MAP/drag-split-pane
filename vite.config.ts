@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dts from 'vite-plugin-dts'
+import tailwindcss from '@tailwindcss/vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -13,6 +14,7 @@ export default defineConfig({
     dts({
       tsconfigPath: resolve(__dirname, 'tsconfig.app.json'),
     }),
+    tailwindcss()
   ],
   build: {
     lib: {

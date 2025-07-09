@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import { inject, onMounted, useTemplateRef } from 'vue'
+import { onMounted, useTemplateRef } from 'vue'
 import TabItem from './TabItem.vue'
-import {
-  type DspInstanceMap,
-  instanceMapInjectKey,
-  type PaneNode,
-  paneNodeInjectKey,
-  rootPaneNodeInjectKey,
-  type Tab,
-} from '../types'
-import { clearEmptyPane, getAllPaneTabs } from '../utils'
+import type { Pane } from '../utils/Pane'
+import type { WindowData } from '../utils/Window'
+import { WindowManager } from '../utils/WindowManager'
 
-const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
-const paneNodeData = inject<PaneNode>(paneNodeInjectKey)!
-const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
+interface Props {
+  pane: Pane
+}
 
+const props = defineProps<Props>()
 const tabHeaderWrapperRef = useTemplateRef('tab-header-wrapper-el')
 
 onMounted(() => {
@@ -37,48 +32,37 @@ const handleDrop = (e: DragEvent): void => {
   e.preventDefault()
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    const tab = JSON.parse(dropData) as Tab
+    const window = JSON.parse(dropData) as WindowData
     if (
-      paneNodeData.tabs.length > 0 &&
-      tab.id === paneNodeData.tabs[paneNodeData.tabs.length - 1].id
+      props.pane.windows.length > 0 &&
+      window.id === props.pane.windows[props.pane.windows.length - 1].id
     ) {
       return
     }
-    if (paneNodeData.tabs.find((_tab) => _tab.id === tab.id)) {
-      paneNodeData.activeTab = tab.id
+    if (props.pane.windows.find((_tab) => _tab.id === window.id)) {
+      props.pane.activeWindowId = window.id
       // 调换位置
-      const tabIndex = paneNodeData.tabs.findIndex((_tab) => _tab.id === tab.id)
-      paneNodeData.tabs.splice(tabIndex, 1)
-      paneNodeData.tabs.push(tab)
+      const windowIndex = props.pane.windows.findIndex((_tab) => _tab.id === window.id)
+      const [splicedWindow] = props.pane.windows.splice(windowIndex, 1)
+      props.pane.windows.push(splicedWindow)
     } else {
       // 先删除之前
-      const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
       if (!originPane) return
-      const originPaneInstance = dspInstanceMap.get(originPane.paneId)
-      if (!originPaneInstance) return
-      originPaneInstance.closeTab(tab.id)
-      // 添加到当前面板
-      paneNodeData.activeTab = tab.id
-      paneNodeData.tabs.push(tab)
-      clearEmptyPane(rootPaneNode)
+      const closedWindow = originPane.closeWindow(window.id)
+      if (closedWindow) {
+        props.pane.insertWindow(closedWindow)
+      }
+      WindowManager.instance.clearEmptyPane()
     }
   }
 }
 </script>
 
 <template>
-  <div
-    ref="tab-header-wrapper-el"
-    class="tab-header-wrapper"
-    @dragover="handleDragOver"
-    @drop="handleDrop"
-  >
-    <TabItem
-      v-for="tab in paneNodeData.tabs"
-      :key="tab.id"
-      :tab="tab"
-    >
-      {{ tab.id }}
+  <div ref="tab-header-wrapper-el" class="tab-header-wrapper" @dragover="handleDragOver" @drop="handleDrop">
+    <TabItem v-for="window in pane.windows" :key="window.id" :window="window" :pane="pane">
+      {{ window.id }}
     </TabItem>
   </div>
 </template>
@@ -119,7 +103,7 @@ const handleDrop = (e: DragEvent): void => {
   overflow-x: scroll;
   background-color: #c0c0c0;
 
-  > .tab-item:last-child {
+  >.tab-item:last-child {
     border-right-color: transparent;
   }
 }

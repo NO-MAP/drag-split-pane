@@ -1,27 +1,23 @@
 <script lang="ts" setup>
-import { inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, type Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, type Ref } from 'vue'
 import {
-  type DspInstanceMap,
-  instanceMapInjectKey,
-  loadedPaneTabInjectKey,
   PaneDirection,
-  type PaneNode,
-  paneNodeInjectKey,
-  rootPaneNodeInjectKey,
-  type Tab,
-  TabInsertPanePosition,
-  TabInsertPosition,
+  WindowInsertPanePosition,
+  WindowInsertPosition,
 } from '../types'
-import { clearEmptyPane, findPaneNodeById, getAllPaneTabs } from '../utils'
-import { v4 as uuidv4 } from 'uuid'
+import { Pane } from '../utils/Pane'
+import type { WindowData } from '../utils/Window';
+import { WindowManager } from '../utils/WindowManager';
 
-const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
-const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
-const paneNode = inject<PaneNode>(paneNodeInjectKey)!
-const loadedPaneTab = inject<Ref<string[]>>(loadedPaneTabInjectKey)!
+interface Props {
+  pane: Pane
+}
+
+const props = defineProps<Props>()
+
 const isOverDropZone = ref(false)
 const splitDirection: Ref<PaneDirection> = ref(PaneDirection.Horizontal)
-const insertPosition = ref(TabInsertPanePosition.Left)
+const insertPosition = ref(WindowInsertPanePosition.Left)
 const tabContentRef = useTemplateRef('pane-content-el')
 
 // 处理拖放事件
@@ -41,70 +37,43 @@ const handleDrop = (e: DragEvent) => {
   isOverDropZone.value = false
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    const tab = JSON.parse(dropData) as Tab
-    debugger
-    if (insertPosition.value === TabInsertPanePosition.Middle) {
-      if (tab.id === paneNode.activeTab) {
+    const window = JSON.parse(dropData) as WindowData
+    if (insertPosition.value === WindowInsertPanePosition.Middle) {
+      if (window.id === props.pane.activeWindowId) {
         return
       }
-      if (paneNode.tabs.find((_tab) => _tab.id === tab.id)) {
-        paneNode.activeTab = tab.id
+      if (props.pane.windows.find((_window) => _window.id === window.id)) {
+        props.pane.activeWindowId = window.id
         return
       }
-      // 先删除之前
-      const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
       if (!originPane) return
-      const originPaneInstance = dspInstanceMap.get(originPane.paneId)
-      if (originPaneInstance) {
-        originPaneInstance.closeTab(tab.id)
-      }
-      // await nextTick()
-      const paneInstance = dspInstanceMap.get(paneNode.id)
-      if (paneInstance) {
-        paneInstance.insertTab(tab, paneNode.activeTab, TabInsertPosition.Right)
+      const closedWindow = originPane.closeWindow(window.id)
+      if (closedWindow) {
+        props.pane.insertWindow(closedWindow, WindowInsertPosition.Right, props.pane.activeWindowId)
       }
     } else {
-      // 先删除之前
-      const originPaneTab = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
-      if (!originPaneTab) return
-      const originPane = findPaneNodeById(rootPaneNode, originPaneTab.paneId)
-      if (originPane.tabs.length === 1 && paneNode.activeTab === tab.id) {
-        return
+      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
+      if (!originPane) return
+      const closedWindow = originPane.closeWindow(window.id)
+      if (closedWindow) {
+        const newPane = new Pane()
+        newPane.insertWindow(closedWindow)
+        props.pane.insertPane(newPane, insertPosition.value)
+        props.pane.doLayoutPane()
       }
-      const originPaneInstance = dspInstanceMap.get(originPaneTab.paneId)
-      if (originPaneInstance) {
-        originPaneInstance.closeTab(tab.id)
-      }
-      // await nextTick()
-      const paneInstance = dspInstanceMap.get(paneNode.id)
-      if (paneInstance) {
-        paneInstance.insertPane(
-          {
-            id: uuidv4(),
-            tabs: [tab],
-            activeTab: tab.id,
-            direction: PaneDirection.Horizontal,
-            children: [],
-            size: [],
-          },
-          insertPosition.value,
-        )
-        paneInstance.doLayoutChildrenPane()
-      }
-      // await nextTick()
     }
-    clearEmptyPane(rootPaneNode)
+    WindowManager.instance.clearEmptyPane()
   }
 }
 
 onMounted(() => {
-  // console.log("paneContent mount")
-  loadedPaneTab.value.push(paneNode.id)
+  // loadedPaneTab.value.push(props.pane.id)
 })
 
 onBeforeUnmount(() => {
   // console.log("paneContent unmount")
-  loadedPaneTab.value = loadedPaneTab.value.filter(id => id !== paneNode.id)
+  // loadedPaneTab.value = loadedPaneTab.value.filter(id => id !== paneNode.id)
 })
 
 const calculateDropPosition = (e: DragEvent): void => {
@@ -128,19 +97,19 @@ const calculateDropPosition = (e: DragEvent): void => {
 
   // 方向优先级：边缘 > 中间
   if (isNearTop) {
-    insertPosition.value = TabInsertPanePosition.Top
+    insertPosition.value = WindowInsertPanePosition.Top
     splitDirection.value = PaneDirection.Vertical
   } else if (isNearBottom) {
-    insertPosition.value = TabInsertPanePosition.Bottom
+    insertPosition.value = WindowInsertPanePosition.Bottom
     splitDirection.value = PaneDirection.Vertical
   } else if (isNearLeft) {
-    insertPosition.value = TabInsertPanePosition.Left
+    insertPosition.value = WindowInsertPanePosition.Left
     splitDirection.value = PaneDirection.Horizontal
   } else if (isNearRight) {
-    insertPosition.value = TabInsertPanePosition.Right
+    insertPosition.value = WindowInsertPanePosition.Right
     splitDirection.value = PaneDirection.Horizontal
   } else {
-    insertPosition.value = TabInsertPanePosition.Middle
+    insertPosition.value = WindowInsertPanePosition.Middle
   }
 
   // 处理四角的情况（同时满足水平和垂直条件时）
@@ -151,10 +120,10 @@ const calculateDropPosition = (e: DragEvent): void => {
 
     if (verticalDist < horizontalDist) {
       splitDirection.value = PaneDirection.Horizontal
-      insertPosition.value = isNearTop ? TabInsertPanePosition.Top : TabInsertPanePosition.Bottom
+      insertPosition.value = isNearTop ? WindowInsertPanePosition.Top : WindowInsertPanePosition.Bottom
     } else {
       splitDirection.value = PaneDirection.Vertical
-      insertPosition.value = isNearLeft ? TabInsertPanePosition.Left : TabInsertPanePosition.Right
+      insertPosition.value = isNearLeft ? WindowInsertPanePosition.Left : WindowInsertPanePosition.Right
     }
   }
 }
@@ -165,17 +134,17 @@ const calculateDropPosition = (e: DragEvent): void => {
     @drop="handleDrop">
     <!-- 分屏指示器 -->
     <div v-if="isOverDropZone" class="split-indicator" :class="{
-      top: insertPosition === TabInsertPanePosition.Top,
-      bottom: insertPosition === TabInsertPanePosition.Bottom,
-      left: insertPosition === TabInsertPanePosition.Left,
-      right: insertPosition === TabInsertPanePosition.Right,
-      middle: insertPosition === TabInsertPanePosition.Middle,
+      top: insertPosition === WindowInsertPanePosition.Top,
+      bottom: insertPosition === WindowInsertPanePosition.Bottom,
+      left: insertPosition === WindowInsertPanePosition.Left,
+      right: insertPosition === WindowInsertPanePosition.Right,
+      middle: insertPosition === WindowInsertPanePosition.Middle,
     }"></div>
 
     <!-- 当前面板内容 -->
-    <div>paneNode.id --- {{ paneNode.id }}</div>
-    <div>tab.id --- {{ paneNode.activeTab }}</div>
-    <div :id="`paneContent_${paneNode.id}`" class="current-content"></div>
+    <div>pane.id --- {{ pane.id }}</div>
+    <div>pane.activeWindowId --- {{ pane.activeWindowId }}</div>
+    <div :id="`paneContent_${pane.id}`" class="current-content"></div>
   </div>
 </template>
 

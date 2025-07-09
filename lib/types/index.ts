@@ -89,6 +89,11 @@ export enum TabInsertPosition {
   Right = 'Right',
 }
 
+export enum WindowInsertPosition {
+  Left = 'Left',
+  Right = 'Right',
+}
+
 export interface Tab {
   id: string
 }
@@ -98,7 +103,7 @@ export type PaneTab = Tab & {
   activeTab: string
 }
 
-export enum TabInsertPanePosition {
+export enum WindowInsertPanePosition {
   Top = 'Top',
   Right = 'Right',
   Bottom = 'Bottom',
@@ -109,7 +114,7 @@ export enum TabInsertPanePosition {
 export interface DragSplitPaneIns {
   closeTab: (tabId: string) => boolean
   insertTab: (tab: Tab, neighborTabId: string, insertPosition: TabInsertPosition) => boolean
-  insertPane: (newPane: PaneNode, tabInsertPanePosition: TabInsertPanePosition) => boolean
+  insertPane: (newPane: PaneNode, tabInsertPanePosition: WindowInsertPanePosition) => boolean
   doLayoutChildrenPane: () => void
 }
 

@@ -1,28 +1,20 @@
 <script lang="ts" setup>
-import { computed, inject, type PropType, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import {
-  type DspInstanceMap,
-  instanceMapInjectKey,
-  type PaneNode,
-  paneNodeInjectKey,
-  rootPaneNodeInjectKey,
-  type Tab,
   TabInsertPosition,
 } from '../types'
 import CloseBtn from './CloseBtn.vue'
-import { clearEmptyPane, getAllPaneTabs } from '../utils'
+import type { Window } from '../utils/Window'
+import type { Pane } from '../utils/Pane'
 
-const props = defineProps({
-  tab: {
-    type: Object as PropType<Tab>,
-    required: true,
-  },
-})
+interface Props {
+  window: Window,
+  pane: Pane
+}
 
-const paneNode = inject<PaneNode>(paneNodeInjectKey)!
-const rootPaneNode = inject<PaneNode>(rootPaneNodeInjectKey)!
-const dspInstanceMap = inject<DspInstanceMap>(instanceMapInjectKey)!
-const isActive = computed(() => props.tab.id === paneNode.activeTab)
+const props = defineProps<Props>()
+
+const isActive = computed(() => props.window.id === props.pane.activeWindowId)
 
 const isOverDropZone = ref(false)
 const insertPosition = ref<TabInsertPosition>(TabInsertPosition.Left)
@@ -30,7 +22,7 @@ const tabItemRef = useTemplateRef('tab-item-ref')
 
 const handleDragStart = (e: DragEvent): void => {
   if (e.dataTransfer) {
-    e.dataTransfer.setData('application/json', JSON.stringify(props.tab))
+    e.dataTransfer.setData('application/json', JSON.stringify(props.window.getData()))
   }
 }
 
@@ -49,23 +41,26 @@ const handleDragLeave = (): void => {
 const handleDrop = (e: DragEvent): void => {
   e.preventDefault()
   isOverDropZone.value = false
-  if (e.dataTransfer) {
-    const dropData = e.dataTransfer?.getData('application/json')
-    const tab = JSON.parse(dropData) as Tab
-    if (tab.id === props.tab.id) return
-    // 先删除之前
-    const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
-    if (!originPane) return
-    const originPaneInstance = dspInstanceMap.get(originPane.paneId)
-    if (originPaneInstance) {
-      originPaneInstance.closeTab(tab.id)
-    }
-    const targetPaneInstance = dspInstanceMap.get(paneNode.id)
-    if (targetPaneInstance) {
-      targetPaneInstance.insertTab(tab, props.tab.id, insertPosition.value)
-    }
-    clearEmptyPane(rootPaneNode)
-  }
+
+  return
+
+  // if (e.dataTransfer) {
+  //   const dropData = e.dataTransfer?.getData('application/json')
+  //   const tab = JSON.parse(dropData) as Tab
+  //   if (tab.id === props.tab.id) return
+  //   // 先删除之前
+  //   const originPane = getAllPaneTabs(rootPaneNode).find((paneTab) => paneTab.id === tab.id)
+  //   if (!originPane) return
+  //   const originPaneInstance = dspInstanceMap.get(originPane.paneId)
+  //   if (originPaneInstance) {
+  //     originPaneInstance.closeTab(tab.id)
+  //   }
+  //   const targetPaneInstance = dspInstanceMap.get(paneNode.id)
+  //   if (targetPaneInstance) {
+  //     targetPaneInstance.insertTab(tab, props.tab.id, insertPosition.value)
+  //   }
+  //   clearEmptyPane(rootPaneNode)
+  // }
 }
 
 // 动态计算放置位置
@@ -82,40 +77,25 @@ const calculateDropPosition = (e: DragEvent): void => {
 </script>
 
 <template>
-  <div
-    ref="tab-item-ref"
-    class="tab-item"
-    :class="[
-      isOverDropZone && insertPosition === TabInsertPosition.Left ? 'drop-left' : '',
-      isOverDropZone && insertPosition === TabInsertPosition.Right ? 'drop-right' : '',
-      isActive ? 'active' : '',
-    ]"
-    draggable="true"
-    @dragstart.stop="handleDragStart"
-    @dragleave.stop="handleDragLeave"
-    @dragover.stop="handleDragOver"
-    @drop.stop="handleDrop"
-    @click.stop="
+  <div ref="tab-item-ref" class="tab-item" :class="[
+    isOverDropZone && insertPosition === TabInsertPosition.Left ? 'drop-left' : '',
+    isOverDropZone && insertPosition === TabInsertPosition.Right ? 'drop-right' : '',
+    isActive ? 'active' : '',
+  ]" draggable="true" @dragstart.stop="handleDragStart" @dragleave.stop="handleDragLeave"
+    @dragover.stop="handleDragOver" @drop.stop="handleDrop" @click.stop="
       () => {
-        paneNode.activeTab = tab.id
+        pane.activeWindowId = window.id
       }
-    "
-  >
+    ">
     <div class="content">
-      {{ tab.id }}
+      {{ window.id }}
     </div>
     <div class="operation">
-      <CloseBtn
-        @click.stop="
-          () => {
-            const paneInstance = dspInstanceMap.get(paneNode.id)
-            if (paneInstance) {
-              paneInstance.closeTab(tab.id)
-            }
-            clearEmptyPane(rootPaneNode)
-          }
-        "
-      />
+      <CloseBtn @click.stop="
+        () => {
+          pane.closeWindow(window.id)
+        }
+      " />
     </div>
   </div>
 </template>
