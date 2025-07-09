@@ -1,11 +1,10 @@
-import { ref, type Ref } from "vue"
+import { ref } from "vue"
 import { Pane, type PaneData } from "./Pane"
 import { Window } from './Window'
 
 export class WindowManager {
   private static _instance?: WindowManager = undefined
   private _rootPaneRef = ref(new Pane())
-  private _readyDestroyWindows: Ref<Window[]> = ref([])
 
   public static get instance() {
     if (this._instance === undefined) {
@@ -18,10 +17,6 @@ export class WindowManager {
     return this._rootPaneRef.value as Pane
   }
 
-  public get readyDestroyWindows() {
-    return this._readyDestroyWindows.value
-  }
-
   setRootPane(paneData: PaneData) {
     // 收集并销毁旧窗格树中的所有窗口
     const collectWindows = (pane: Pane): Window[] => {
@@ -32,9 +27,6 @@ export class WindowManager {
       return windows
     }
 
-    const oldWindows = collectWindows(this.rootPane)
-    this.readyDestroyWindows.push(...oldWindows)
-
     // 重建窗格树
     const reconstructPane = (data: PaneData): Pane => {
       const pane = new Pane(data.id)
@@ -44,7 +36,11 @@ export class WindowManager {
 
       // 重建窗口
       data.windows.map(windowData => {
-        pane.insertWindow(new Window(windowData.windowData, windowData.id))
+        pane.insertWindow(new Window({
+          id: windowData.id,
+          parentPane: pane,
+          data: windowData.data
+        }))
       })
       // 递归重建子窗格
       pane.children = data.children.map(childData =>

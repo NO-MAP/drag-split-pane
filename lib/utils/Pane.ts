@@ -25,6 +25,9 @@ export class Pane {
     return this._windows
   }
 
+  public get aliveWindows() {
+    return this._windows.filter(window => !window.isClosed)
+  }
 
   constructor(_id?: string) {
     this.id = _id || uuid()
@@ -36,22 +39,18 @@ export class Pane {
     newPane.direction = this.direction
     newPane.children = this.children
     newPane.size = this.size
-    this.windows.forEach(window => {
+    this.windows.forEach((window) => {
       newPane.insertWindow(window)
     })
     return newPane
   }
 
-  splitPane() {
-
-  }
-
-  insertWindow(_window: Window, insertPosition = WindowInsertPosition.Right, neighborWindowId?: string) {
+  insertWindow(
+    _window: Window,
+    insertPosition = WindowInsertPosition.Right,
+    neighborWindowId?: string,
+  ) {
     let window = _window
-    const rdsWindowIndex = WindowManager.instance.readyDestroyWindows.findIndex(rdsWindow => rdsWindow.id === _window.id)
-    if (rdsWindowIndex !== -1) {
-      [window] = WindowManager.instance.readyDestroyWindows.splice(rdsWindowIndex, 1)
-    }
     if (!neighborWindowId) {
       this.activeWindowId = window.id
       this.windows.push(window)
@@ -67,17 +66,18 @@ export class Pane {
   }
 
   closeWindow(windowId: string): undefined | Window {
-    const index = this.windows.findIndex(window => window.id === windowId)
+    const index = this.aliveWindows.findIndex((window) => window.id === windowId)
     if (index === -1) return
+    const window = this.aliveWindows[index]
+
     const wasActive = this.activeWindowId === windowId
 
-    const [closedWindow] = this.windows.splice(index, 1)
-    WindowManager.instance.readyDestroyWindows.push(closedWindow)
-    if (this.windows.length !== 0 && wasActive) {
-      const newActiveIndex = index >= this.windows.length ? this.windows.length - 1 : index
-      this.activeWindowId = this.windows[newActiveIndex].id
+    if (this.aliveWindows.length !== 0 && wasActive) {
+      const newActiveIndex = index >= this.aliveWindows.length ? this.aliveWindows.length - 1 : index
+      this.activeWindowId = this.aliveWindows[newActiveIndex].id
     }
-    return closedWindow
+    window.close()
+    return window
   }
 
   insertPane(insertPane: Pane, insertPosition: WindowInsertPanePosition) {
@@ -100,11 +100,11 @@ export class Pane {
   getData(): PaneData {
     return {
       id: this.id,
-      windows: this.windows.map(window => window.getData()),
+      windows: this.windows.map((window) => window.getData()),
       activeWindowId: this.activeWindowId,
       direction: this.direction,
-      children: this.children.map(pane => pane.getData()),
-      size: this.size
+      children: this.children.map((pane) => pane.getData()),
+      size: this.size,
     }
   }
 
@@ -134,6 +134,14 @@ export class Pane {
       const delta = splitPaneElWidth - newSize.reduce((p, c) => p + c, 0)
       newSize[newSize.length - 1] += delta
       this.size = newSize
+    }
+  }
+
+  removeWindow(windowId: string) {
+    const index = this._windows.findIndex((window) => window.id === windowId)
+    if (index !== -1) {
+      const [removedWindow] = this._windows.splice(index, 1)
+      return removedWindow
     }
   }
 }
