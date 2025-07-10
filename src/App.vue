@@ -15,9 +15,9 @@ const defaultPaneData: PaneData = {
     { id: 'activeTab1', data: undefined, destroyTime: 6 * 10 * 1000 },
     { id: 'activeTab2', data: undefined, destroyTime: 6 * 10 * 1000 },
     { id: 'activeTab3', data: undefined, destroyTime: 6 * 10 * 1000 },
-    // { id: 'activeTab4', data: undefined, destroyTime: 6 * 10 * 1000 },
-    // { id: 'activeTab5', data: undefined, destroyTime: 6 * 10 * 1000 },
-    // { id: 'activeTab6', data: undefined, destroyTime: 6 * 10 * 1000 },
+    { id: 'activeTab4', data: undefined, destroyTime: 6 * 10 * 1000 },
+    { id: 'activeTab5', data: undefined, destroyTime: 6 * 10 * 1000 },
+    { id: 'activeTab6', data: undefined, destroyTime: 6 * 10 * 1000 },
   ],
   children: [],
 }

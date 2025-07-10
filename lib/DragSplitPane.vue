@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
   </div>
   <template v-if="isRoot && isLoaded">
     <Teleport v-for="window in allWindow" :to="returnRenderDomId(window)" :key="window.id">
-      <div class="w-full h-full" v-show="window.parentPane.activeWindowId === window.id" :key="window.id">
+      <div class="w-full h-full" v-show="window.parentPane.activeWindowId === window.id">
         <slot name="window-content" :window="window" />
       </div>
     </Teleport>
@@ -138,11 +138,5 @@ onBeforeUnmount(() => {
     <div :id="unLoadedPaneWindowWrapperId" style="position: fixed; top: 0; right: 0; background-color: white;">
 
     </div>
-
-    <!-- <div style="position: fixed; bottom: 0; right: 0; background-color: white;">
-      <div v-for="window in allWindow" style="width: 200px; height: 200px;" :key="window.id">
-        <CodeTab />
-      </div>
-    </div> -->
   </template>
 </template>
