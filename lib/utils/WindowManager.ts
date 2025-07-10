@@ -6,6 +6,9 @@ import { getAllWindows } from "."
 export class WindowManager {
   private static _instance?: WindowManager = undefined
   private _rootPaneRef = ref(new Pane())
+  private _loadedPaneIds = ref([] as string[])
+
+
 
   public static get instance() {
     if (this._instance === undefined) {
@@ -20,6 +23,20 @@ export class WindowManager {
 
   public get allWindows() {
     return getAllWindows(this.rootPane)
+  }
+
+  public get loadedPaneIds() {
+    return this._loadedPaneIds
+  }
+
+  addLoadedPane(paneId: string) {
+    if (!this._loadedPaneIds.value.includes(paneId)) {
+      this._loadedPaneIds.value.push(paneId)
+    }
+  }
+
+  removeLoadedPane(paneId: string) {
+    this._loadedPaneIds.value = this._loadedPaneIds.value.filter(id => id !== paneId)
   }
 
   findWindow(windowId: string) {
@@ -37,8 +54,9 @@ export class WindowManager {
     }
 
     // 重建窗格树
-    const reconstructPane = (data: PaneData): Pane => {
+    const reconstructPane = (data: PaneData, parentPane?: Pane): Pane => {
       const pane = new Pane(data.id)
+      pane.parentPane = parentPane
       pane.activeWindowId = data.activeWindowId
       pane.direction = data.direction
       pane.size = [...data.size]
@@ -46,15 +64,13 @@ export class WindowManager {
       // 重建窗口
       data.windows.forEach(windowData => {
         new Window({
-          id: windowData.id,
-          parentPane: pane,
-          data: windowData.data
+          ...windowData,
+          parentPane: pane
         })
       })
       // 递归重建子窗格
       pane.children = data.children.map(childData =>
-        reconstructPane(childData))
-
+        reconstructPane(childData, pane))
       return pane
     }
     this._rootPaneRef.value = reconstructPane(paneData)

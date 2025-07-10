@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import {
   type ColorSetting,
   colorVariables,
@@ -12,7 +12,8 @@ import { useResizeObserver } from '@vueuse/core'
 import type { Pane } from './utils/Pane'
 import PaneHeaders from './component/PaneHeaders.vue'
 import PaneContent from './component/PaneContent.vue'
-import CodeTab from '../src/component/CodeTab.vue'
+import { WindowManager } from './utils/WindowManager'
+import type { Window } from './utils/Window'
 
 interface Props {
   colorSettings?: Partial<ColorSetting>
@@ -46,13 +47,9 @@ const variablesStyle = props.isRoot
 
 
 const splitPaneElRef = useTemplateRef('split-pane-el')
-
+const isLoaded = ref(false)
 onMounted(() => {
-
-})
-
-onBeforeUnmount(() => {
-
+  isLoaded.value = true
 })
 
 const handleResize = (index: number, delta: number): void => {
@@ -65,15 +62,26 @@ const handleResize = (index: number, delta: number): void => {
   }
 }
 
-const allPaneTabs = computed(() => {
-  return []
+const allWindow = computed(() => {
+  return WindowManager.instance.allWindows
 })
 
-watch(() => allPaneTabs.value, (value) => {
-  console.log('allPaneTabs changed', value)
-}, {
-  deep: true
+const loadedPaneIds = computed(() => {
+  return WindowManager.instance.loadedPaneIds.value
 })
+
+const closedWindowContentWrapperId = 'closedWindowContentWrapper'
+const unLoadedPaneWindowWrapperId = 'unLoadedPaneWindowWrapper'
+
+const returnRenderDomId = (window: Window) => {
+  if (window.isClosed) {
+    return `#${closedWindowContentWrapperId}`
+  }
+  if (!loadedPaneIds.value.includes(window.parentPane.id)) {
+    return `#${unLoadedPaneWindowWrapperId}`
+  }
+  return `#paneContent_${window.parentPane.id}`
+}
 
 let splitPaneElResizeObserver: ReturnType<typeof useResizeObserver> | undefined = undefined
 
@@ -118,12 +126,23 @@ onBeforeUnmount(() => {
       <PaneContent :pane="pane" />
     </div>
   </div>
-  <template v-if="isRoot">
-    <div style="position: fixed; bottom: 0; left: 0; background-color: white;">
-      <!-- <div v-for="tab in allPaneTabs" style="height: 200px; width: 200px; border: 1px solid #eee" :key="tab.id"
-        class="tab-content">
-        <CodeTab />
-      </div> -->
+  <template v-if="isRoot && isLoaded">
+    <Teleport v-for="window in allWindow" :to="returnRenderDomId(window)" :key="window.id">
+      <div class="w-full h-full" v-show="window.parentPane.activeWindowId === window.id" :key="window.id">
+        <slot name="window-content" :window="window" />
+      </div>
+    </Teleport>
+    <div :id="closedWindowContentWrapperId" style="position: fixed; bottom: 0; right: 0; background-color: white;">
+
     </div>
+    <div :id="unLoadedPaneWindowWrapperId" style="position: fixed; top: 0; right: 0; background-color: white;">
+
+    </div>
+
+    <!-- <div style="position: fixed; bottom: 0; right: 0; background-color: white;">
+      <div v-for="window in allWindow" style="width: 200px; height: 200px;" :key="window.id">
+        <CodeTab />
+      </div>
+    </div> -->
   </template>
 </template>

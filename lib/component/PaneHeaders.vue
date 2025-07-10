@@ -59,7 +59,7 @@ const handleDrop = (e: DragEvent): void => {
 <template>
   <div ref="tab-header-wrapper-el" class="h-8 w-full flex flex-nowrap overflow-y-hidden overflow-x-scroll bg-gray-400"
     @dragover="handleDragOver" @drop="handleDrop">
-    <TabItem v-for="window in pane.windows" :key="window.id" :window="window" :pane="pane">
+    <TabItem v-for="window in pane.aliveWindows" :key="window.id" :window="window" :pane="pane">
       {{ window.id }}
     </TabItem>
   </div>

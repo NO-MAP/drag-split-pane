@@ -12,12 +12,12 @@ const defaultPaneData: PaneData = {
   size: [1274],
   activeWindowId: 'activeTab1',
   windows: [
-    { id: 'activeTab1', data: undefined, destroyTime: 10 * 1000 },
-    { id: 'activeTab2', data: undefined, destroyTime: 10 * 1000 },
-    { id: 'activeTab3', data: undefined, destroyTime: 10 * 1000 },
-    { id: 'activeTab4', data: undefined, destroyTime: 10 * 1000 },
-    { id: 'activeTab5', data: undefined, destroyTime: 10 * 1000 },
-    { id: 'activeTab6', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab1', data: undefined, destroyTime: 6 * 10 * 1000 },
+    { id: 'activeTab2', data: undefined, destroyTime: 6 * 10 * 1000 },
+    { id: 'activeTab3', data: undefined, destroyTime: 6 * 10 * 1000 },
+    // { id: 'activeTab4', data: undefined, destroyTime: 6 * 10 * 1000 },
+    // { id: 'activeTab5', data: undefined, destroyTime: 6 * 10 * 1000 },
+    // { id: 'activeTab6', data: undefined, destroyTime: 6 * 10 * 1000 },
   ],
   children: [],
 }
@@ -45,8 +45,8 @@ const rootPane = computed(() => {
         </div>
         <div class="flex-grow h-full border border-[#000333] border-l-0 bg-[#c1c1c1]">
           <DragSplitPane :pane="rootPane">
-            <template #tab-content="{ tab }">
-              <CodeTab :key="tab.id" />
+            <template #window-content="{ window }">
+              <CodeTab :key="window.id" />
             </template>
           </DragSplitPane>
         </div>
@@ -56,5 +56,4 @@ const rootPane = computed(() => {
 </template>
 
 <style scoped>
-/* 所有SCSS样式已转换为Tailwind类，可以删除原有样式 */
 </style>

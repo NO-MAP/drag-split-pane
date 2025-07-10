@@ -1,10 +1,15 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const count = ref(0)
 const increment = () => {
   count.value++
 }
+
+
+onMounted(() => {
+  console.log('code tab on mounted')
+})
 </script>
 
 <template>

@@ -24,6 +24,9 @@ export class Window {
     this.id = initData.id || uuid()
     this.parentPane = initData.parentPane
     this.parentPane.windows.push(this)
+    if (initData.destroyTime) {
+      this.destroyTime = initData.destroyTime
+    }
   }
 
   getData() {
@@ -35,6 +38,9 @@ export class Window {
   }
 
   close() {
+    if (this.parentPane.activeWindowId === this.id) {
+      this.parentPane.activeNextWindow(this.id)
+    }
     this.isClosed = true
     this.destroyTimer = setTimeout(() => {
       this.destroy()
@@ -51,7 +57,7 @@ export class Window {
   moveToOtherPane(targetPane: Pane, insertPosition = WindowInsertPosition.Right, neighborWindowId?: string) {
     if (!this.isClosed) {
       if (this.parentPane.activeWindowId === this.id) {
-        this.parentPane.activePreWindow(this.id)
+        this.parentPane.activeNextWindow(this.id)
       }
       targetPane.activeWindowId = this.id
     }

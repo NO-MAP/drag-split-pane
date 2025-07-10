@@ -32,7 +32,7 @@ const handleDragLeave = (): void => {
   isOverDropZone.value = false
 }
 
-const handleDrop = (e: DragEvent) => {
+const handleDrop = async (e: DragEvent) => {
   e.preventDefault()
   isOverDropZone.value = false
   if (e.dataTransfer) {
@@ -58,16 +58,16 @@ const handleDrop = (e: DragEvent) => {
       dropWindow.moveToOtherPane(newPane)
     }
     WindowManager.instance.rootPane.clearEmptyPanes()
+    WindowManager.instance.rootPane.doLayoutPane()
   }
 }
 
 onMounted(() => {
-  // loadedPaneTab.value.push(props.pane.id)
+  WindowManager.instance.addLoadedPane(props.pane.id)
 })
 
 onBeforeUnmount(() => {
-  // console.log("paneContent unmount")
-  // loadedPaneTab.value = loadedPaneTab.value.filter(id => id !== paneNode.id)
+  WindowManager.instance.removeLoadedPane(props.pane.id)
 })
 
 const calculateDropPosition = (e: DragEvent): void => {
@@ -134,10 +134,8 @@ const calculateDropPosition = (e: DragEvent): void => {
       'right-0 top-0 w-1/2 h-full': insertPosition === WindowInsertPanePosition.Right,
       'inset-0 h-full w-full': insertPosition === WindowInsertPanePosition.Middle,
     }"></div>
-
-    <!-- 当前面板内容 -->
-    <div>pane.id --- {{ pane.id }}</div>
-    <div>pane.activeWindowId --- {{ pane.activeWindowId }}</div>
-    <div :id="`paneContent_${pane.id}`" class="w-full h-full overflow-hidden"></div>
+    <div :id="`paneContent_${pane.id}`" class="w-full h-full overflow-hidden">
+      <div>{{ pane.id }}</div>
+    </div>
   </div>
 </template>

@@ -19,6 +19,7 @@ export class Pane {
   children: Pane[] = []
   size: number[] = []
   el?: HTMLElement
+  parentPane?: Pane
 
   public get windows() {
     return this._windows
@@ -39,15 +40,12 @@ export class Pane {
     this._windows = windows
   }
 
-  activePreWindow(windowId: string) {
+  public activeNextWindow(windowId: string) {
     const currentIndex = this.aliveWindows.findIndex(w => w.id === windowId);
     if (currentIndex === -1) return;
 
-    const prevIndex = currentIndex > 0
-      ? currentIndex - 1
-      : this.aliveWindows.length - 1;
-
-    this.activeWindowId = this.aliveWindows[prevIndex].id;
+    const nextIndex = (currentIndex + 1) % this.aliveWindows.length;
+    this.activeWindowId = this.aliveWindows[nextIndex].id;
   }
 
   splitPane(insertPosition: WindowInsertPanePosition) {
@@ -55,12 +53,15 @@ export class Pane {
       throw new Error('WindowInsertPanePosition.Middle do not need split')
     }
     const newPane = new Pane()
+    newPane.parentPane = this
     const originalPane = new Pane()
+    originalPane.parentPane = this
     originalPane.activeWindowId = this.activeWindowId
     originalPane.direction = this.direction
     originalPane.children = this.children
     originalPane.size = this.size
     originalPane.setWindows(this._windows)
+
     this._windows = []
     this.children = [WindowInsertPanePosition.Bottom, WindowInsertPanePosition.Right].includes(
       insertPosition,
@@ -75,7 +76,6 @@ export class Pane {
     this.size = [100, 100]
     this.activeWindowId = ''
     this._windows = []
-    this.doLayoutPane()
     return {
       newPane,
       originalPane
@@ -98,6 +98,7 @@ export class Pane {
   }
 
   doLayoutPane() {
+    console.log('doLayoutPane')
     if (!this.el) return
     if (this.direction === PaneDirection.Vertical) {
       // 子面板为垂直布局
@@ -120,6 +121,9 @@ export class Pane {
       newSize[newSize.length - 1] += delta
       this.size = newSize
     }
+    this.children.forEach(pane => {
+      pane.doLayoutPane()
+    })
   }
 
   clearEmptyPanes(): boolean {
@@ -128,35 +132,51 @@ export class Pane {
       const isEmpty = child.clearEmptyPanes();
 
       if (isEmpty) {
-        // 移除空子 Pane 并释放资源
+        // 在移除子面板前，转移其所有窗口到当前面板
+        child.windows.forEach(window => {
+          window.parentPane = this; // 更新父面板引用
+          this._windows.push(window); // 添加到当前面板
+        });
+        child._windows = []; // 清原子面板的窗口列表
+
+        // 移除空子面板并调整布局
         const removedSize = this.size.splice(i, 1)[0];
         this.children.splice(i, 1);
 
-        // 重新分配尺寸给剩余子 Pane
+        // 重新分配尺寸
         if (this.children.length > 0) {
           const totalSize = this.size.reduce((sum, s) => sum + s, 0) + removedSize;
           this.size = this.children.map(() => totalSize / this.children.length);
         }
       }
     }
+
+    // 合并逻辑：当只有一个子面板且当前面板无窗口时
     if (this.children.length === 1 && this.aliveWindows.length === 0) {
       const onlyChild = this.children[0];
       const parentTotalSize = this.size[0];
 
+      // 转移子面板的窗口到当前面板
       onlyChild.windows.forEach(window => {
         window.parentPane = this;
         this._windows.push(window);
       });
+      onlyChild._windows = [];
+
+      // 继承子面板的结构
       this.direction = onlyChild.direction;
       this.children = onlyChild.children;
       this.size = onlyChild.children.length > 0
         ? [...onlyChild.size]
         : [parentTotalSize];
       this.activeWindowId = onlyChild.activeWindowId;
+
+      // 重置子面板并递归清理
       onlyChild.children = [];
-      onlyChild._windows = [];
       return this.clearEmptyPanes();
     }
+
+    // 最终检查：无存活窗口且无子面板则为空
     return this.aliveWindows.length === 0 && this.children.length === 0;
   }
 }

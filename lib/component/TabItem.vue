@@ -95,6 +95,7 @@ const calculateDropPosition = (e: DragEvent): void => {
       <CloseBtn @click.stop="
         () => {
           window.close()
+          WindowManager.instance.rootPane.clearEmptyPanes()
         }
       " />
     </div>
