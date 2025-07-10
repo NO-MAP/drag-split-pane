@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid'
-import { PaneDirection, WindowInsertPanePosition, WindowInsertPosition } from '../types'
+import { PaneDirection, WindowInsertPanePosition } from '../types'
 import { Window } from './Window'
-import { WindowManager } from './WindowManager'
 
 export interface PaneData {
   id: string
@@ -33,60 +32,41 @@ export class Pane {
     this.id = _id || uuid()
   }
 
-  clone() {
-    const newPane = new Pane()
-    newPane.activeWindowId = this.activeWindowId
-    newPane.direction = this.direction
-    newPane.children = this.children
-    newPane.size = this.size
-    this.windows.forEach((window) => {
-      newPane.insertWindow(window)
+  setWindows(windows: Window[]) {
+    windows.forEach(window => {
+      window.parentPane = this
     })
-    return newPane
+    this._windows = windows
   }
 
-  insertWindow(
-    _window: Window,
-    insertPosition = WindowInsertPosition.Right,
-    neighborWindowId?: string,
-  ) {
-    let window = _window
-    if (!neighborWindowId) {
-      this.activeWindowId = window.id
-      this.windows.push(window)
-    } else {
-      const index = this.windows.findIndex((t) => t.id === neighborWindowId)
-      if (index !== -1) {
-        const insertIndex = insertPosition === WindowInsertPosition.Left ? index : index + 1
-        this.activeWindowId = window.id
-        this.windows.splice(insertIndex, 0, window)
-      }
+  activePreWindow(windowId: string) {
+    const currentIndex = this.aliveWindows.findIndex(w => w.id === windowId);
+    if (currentIndex === -1) return;
+
+    const prevIndex = currentIndex > 0
+      ? currentIndex - 1
+      : this.aliveWindows.length - 1;
+
+    this.activeWindowId = this.aliveWindows[prevIndex].id;
+  }
+
+  splitPane(insertPosition: WindowInsertPanePosition) {
+    if (insertPosition === WindowInsertPanePosition.Middle) {
+      throw new Error('WindowInsertPanePosition.Middle do not need split')
     }
-    return window
-  }
-
-  closeWindow(windowId: string): undefined | Window {
-    const index = this.aliveWindows.findIndex((window) => window.id === windowId)
-    if (index === -1) return
-    const window = this.aliveWindows[index]
-
-    const wasActive = this.activeWindowId === windowId
-
-    if (this.aliveWindows.length !== 0 && wasActive) {
-      const newActiveIndex = index >= this.aliveWindows.length ? this.aliveWindows.length - 1 : index
-      this.activeWindowId = this.aliveWindows[newActiveIndex].id
-    }
-    window.close()
-    return window
-  }
-
-  insertPane(insertPane: Pane, insertPosition: WindowInsertPanePosition) {
-    const originalPane = this.clone()
+    const newPane = new Pane()
+    const originalPane = new Pane()
+    originalPane.activeWindowId = this.activeWindowId
+    originalPane.direction = this.direction
+    originalPane.children = this.children
+    originalPane.size = this.size
+    originalPane.setWindows(this._windows)
+    this._windows = []
     this.children = [WindowInsertPanePosition.Bottom, WindowInsertPanePosition.Right].includes(
       insertPosition,
     )
-      ? [originalPane, insertPane]
-      : [insertPane, originalPane]
+      ? [originalPane, newPane]
+      : [newPane, originalPane]
     this.direction = [WindowInsertPanePosition.Left, WindowInsertPanePosition.Right].includes(
       insertPosition,
     )
@@ -95,6 +75,11 @@ export class Pane {
     this.size = [100, 100]
     this.activeWindowId = ''
     this._windows = []
+    this.doLayoutPane()
+    return {
+      newPane,
+      originalPane
+    }
   }
 
   getData(): PaneData {
@@ -137,11 +122,41 @@ export class Pane {
     }
   }
 
-  removeWindow(windowId: string) {
-    const index = this._windows.findIndex((window) => window.id === windowId)
-    if (index !== -1) {
-      const [removedWindow] = this._windows.splice(index, 1)
-      return removedWindow
+  clearEmptyPanes(): boolean {
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      const child = this.children[i];
+      const isEmpty = child.clearEmptyPanes();
+
+      if (isEmpty) {
+        // 移除空子 Pane 并释放资源
+        const removedSize = this.size.splice(i, 1)[0];
+        this.children.splice(i, 1);
+
+        // 重新分配尺寸给剩余子 Pane
+        if (this.children.length > 0) {
+          const totalSize = this.size.reduce((sum, s) => sum + s, 0) + removedSize;
+          this.size = this.children.map(() => totalSize / this.children.length);
+        }
+      }
     }
+    if (this.children.length === 1 && this.aliveWindows.length === 0) {
+      const onlyChild = this.children[0];
+      const parentTotalSize = this.size[0];
+
+      onlyChild.windows.forEach(window => {
+        window.parentPane = this;
+        this._windows.push(window);
+      });
+      this.direction = onlyChild.direction;
+      this.children = onlyChild.children;
+      this.size = onlyChild.children.length > 0
+        ? [...onlyChild.size]
+        : [parentTotalSize];
+      this.activeWindowId = onlyChild.activeWindowId;
+      onlyChild.children = [];
+      onlyChild._windows = [];
+      return this.clearEmptyPanes();
+    }
+    return this.aliveWindows.length === 0 && this.children.length === 0;
   }
 }

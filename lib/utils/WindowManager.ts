@@ -1,6 +1,7 @@
 import { ref } from "vue"
 import { Pane, type PaneData } from "./Pane"
 import { Window } from './Window'
+import { getAllWindows } from "."
 
 export class WindowManager {
   private static _instance?: WindowManager = undefined
@@ -15,6 +16,14 @@ export class WindowManager {
 
   public get rootPane() {
     return this._rootPaneRef.value as Pane
+  }
+
+  public get allWindows() {
+    return getAllWindows(this.rootPane)
+  }
+
+  findWindow(windowId: string) {
+    return this.allWindows.find(window => window.id === windowId)
   }
 
   setRootPane(paneData: PaneData) {
@@ -35,12 +44,12 @@ export class WindowManager {
       pane.size = [...data.size]
 
       // 重建窗口
-      data.windows.map(windowData => {
-        pane.insertWindow(new Window({
+      data.windows.forEach(windowData => {
+        new Window({
           id: windowData.id,
           parentPane: pane,
           data: windowData.data
-        }))
+        })
       })
       // 递归重建子窗格
       pane.children = data.children.map(childData =>
@@ -77,47 +86,4 @@ export class WindowManager {
     }
     return undefined; // 未找到
   }
-
-  clearEmptyPane(_pane?: Pane) {
-    let pane = _pane || this.rootPane
-    let i = 0
-    while (i < pane.children.length) {
-      const child = pane.children[i]
-      const shouldRemoveChild = this.clearEmptyPane(child)
-      if (shouldRemoveChild) {
-        const totalSize = pane.size.reduce((a, b) => a + b, 0)
-        const removedSize = pane.size.splice(i, 1)[0]
-        pane.children.splice(i, 1)
-
-        if (pane.children.length > 0) {
-          const remainingTotal = totalSize - removedSize
-          pane.size = pane.children.map(() => remainingTotal / pane.children.length)
-        }
-      } else {
-        i++
-      }
-    }
-
-    // 合并单子节点，无论子节点是否有children
-    if (pane.children.length === 1) {
-      const onlyChild = pane.children[0]
-      const parentTotalSize = pane.size[0] // 父节点当前总尺寸
-
-      // 提升子节点的属性到父节点
-      onlyChild.windows.map(window => {
-        pane.insertWindow(window)
-      })
-      pane.direction = onlyChild.direction // 继承子节点的方向
-      pane.children = [...onlyChild.children]
-      pane.size = onlyChild.children.length > 0 ? [...onlyChild.size] : [parentTotalSize] // 保持尺寸
-      pane.id = onlyChild.id
-      pane.activeWindowId = onlyChild.activeWindowId
-
-      // 提升后，可能需要进一步清理新的子节点
-      // 递归处理当前节点，因为子节点可能仍有可合并的情况
-      this.clearEmptyPane(pane)
-    }
-    return pane.windows.length === 0 && pane.children.length === 0
-  }
-
 }

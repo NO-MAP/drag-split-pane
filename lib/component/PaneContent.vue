@@ -37,33 +37,27 @@ const handleDrop = (e: DragEvent) => {
   isOverDropZone.value = false
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    const window = JSON.parse(dropData) as WindowData
+    const dropWindowData = JSON.parse(dropData) as WindowData
+    if (props.pane.activeWindowId === dropWindowData.id && insertPosition.value === WindowInsertPanePosition.Middle) {
+      // 放置的就是正激活的窗口且不需要分面板
+      return
+    }
+    const dropWindow = WindowManager.instance.findWindow(dropWindowData.id)
+    if (!dropWindow) return
     if (insertPosition.value === WindowInsertPanePosition.Middle) {
-      if (window.id === props.pane.activeWindowId) {
-        return
-      }
-      if (props.pane.windows.find((_window) => _window.id === window.id)) {
-        props.pane.activeWindowId = window.id
-        return
-      }
-      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
-      if (!originPane) return
-      const closedWindow = originPane.closeWindow(window.id)
-      if (closedWindow) {
-        props.pane.insertWindow(closedWindow, WindowInsertPosition.Right, props.pane.activeWindowId)
+      // 不需要分新面板
+      if (props.pane.id === dropWindow.parentPane.id) {
+        // 同面板放置
+        props.pane.activeWindowId = dropWindow.id
+      } else {
+        dropWindow.moveToOtherPane(props.pane, WindowInsertPosition.Right, props.pane.activeWindowId)
       }
     } else {
-      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
-      if (!originPane) return
-      const closedWindow = originPane.closeWindow(window.id)
-      if (closedWindow) {
-        const newPane = new Pane()
-        newPane.insertWindow(closedWindow)
-        props.pane.insertPane(newPane, insertPosition.value)
-        props.pane.doLayoutPane()
-      }
+      // 需要分新面板
+      const { newPane } = props.pane.splitPane(insertPosition.value)
+      dropWindow.moveToOtherPane(newPane)
     }
-    WindowManager.instance.clearEmptyPane()
+    WindowManager.instance.rootPane.clearEmptyPanes()
   }
 }
 

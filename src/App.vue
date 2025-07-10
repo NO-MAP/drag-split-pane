@@ -12,12 +12,12 @@ const defaultPaneData: PaneData = {
   size: [1274],
   activeWindowId: 'activeTab1',
   windows: [
-    { id: 'activeTab1', windowData: undefined },
-    { id: 'activeTab2', windowData: undefined },
-    { id: 'activeTab3', windowData: undefined },
-    { id: 'activeTab4', windowData: undefined },
-    { id: 'activeTab5', windowData: undefined },
-    { id: 'activeTab6', windowData: undefined },
+    { id: 'activeTab1', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab2', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab3', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab4', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab5', data: undefined, destroyTime: 10 * 1000 },
+    { id: 'activeTab6', data: undefined, destroyTime: 10 * 1000 },
   ],
   children: [],
 }
@@ -25,7 +25,6 @@ WindowManager.instance.setRootPane(defaultPaneData)
 
 const testBtn = () => {
   console.log(rootPane.value)
-  console.log(WindowManager.instance.readyDestroyWindows)
 }
 
 onMounted(() => {

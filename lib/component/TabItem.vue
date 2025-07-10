@@ -44,15 +44,23 @@ const handleDrop = (e: DragEvent): void => {
   isOverDropZone.value = false
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    const windowData = JSON.parse(dropData) as WindowData
-    if (windowData.id === props.window.id) return
-    const originPane = WindowManager.instance.findPaneByWindowId(windowData.id)
-    if (!originPane) return
-    const closedWindow = originPane.closeWindow(windowData.id)
-    if (closedWindow) {
-      props.pane.insertWindow(closedWindow, insertPosition.value, props.window.id)
+    const dropWindowData = JSON.parse(dropData) as WindowData
+    if (dropWindowData.id === props.window.id) return
+    const dropWindow = WindowManager.instance.findWindow(dropWindowData.id)
+    if (!dropWindow) return
+    if (props.pane.windows.find((window) => window.id === dropWindowData.id)) {
+      // 原面板内位置变化
+      props.pane.activeWindowId = dropWindowData.id
+      const windowIndex = props.pane.windows.findIndex((window) => window.id === dropWindowData.id)
+      const [splicedWindow] = props.pane.windows.splice(windowIndex, 1)
+      const targetIndex = props.pane.windows.findIndex((window) => window.id === props.window.id)
+      const insertIndex = insertPosition.value === WindowInsertPosition.Left ? targetIndex : targetIndex + 1
+      props.pane.windows.splice(insertIndex, 0, splicedWindow)
+    } else {
+      // 跨面板变化
+      dropWindow.moveToOtherPane(props.pane, insertPosition.value, props.window.id)
     }
-    WindowManager.instance.clearEmptyPane()
+    WindowManager.instance.rootPane.clearEmptyPanes()
   }
 }
 
@@ -86,7 +94,7 @@ const calculateDropPosition = (e: DragEvent): void => {
     <div class="operation">
       <CloseBtn @click.stop="
         () => {
-          pane.closeWindow(window.id)
+          window.close()
         }
       " />
     </div>

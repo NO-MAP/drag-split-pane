@@ -32,28 +32,25 @@ const handleDrop = (e: DragEvent): void => {
   e.preventDefault()
   if (e.dataTransfer) {
     const dropData = e.dataTransfer?.getData('application/json')
-    const window = JSON.parse(dropData) as WindowData
+    const dropWindowData = JSON.parse(dropData) as WindowData
     if (
       props.pane.windows.length > 0 &&
-      window.id === props.pane.windows[props.pane.windows.length - 1].id
+      dropWindowData.id === props.pane.windows[props.pane.windows.length - 1].id
     ) {
       return
     }
-    if (props.pane.windows.find((_tab) => _tab.id === window.id)) {
-      props.pane.activeWindowId = window.id
-      // 调换位置
-      const windowIndex = props.pane.windows.findIndex((_tab) => _tab.id === window.id)
+    if (props.pane.windows.find((window) => window.id === dropWindowData.id)) {
+      // 原面板内位置变化
+      props.pane.activeWindowId = dropWindowData.id
+      const windowIndex = props.pane.windows.findIndex((window) => window.id === dropWindowData.id)
       const [splicedWindow] = props.pane.windows.splice(windowIndex, 1)
       props.pane.windows.push(splicedWindow)
     } else {
-      // 先删除之前
-      const originPane = WindowManager.instance.findPaneByWindowId(window.id)
-      if (!originPane) return
-      const closedWindow = originPane.closeWindow(window.id)
-      if (closedWindow) {
-        props.pane.insertWindow(closedWindow)
-      }
-      WindowManager.instance.clearEmptyPane()
+      // 跨面板变化
+      const dropWindow = WindowManager.instance.findWindow(dropWindowData.id)
+      if (!dropWindow) return
+      dropWindow.moveToOtherPane(props.pane)
+      WindowManager.instance.rootPane.clearEmptyPanes()
     }
   }
 }
