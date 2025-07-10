@@ -1,7 +1,8 @@
 import { ref } from "vue"
-import { Pane, type PaneData } from "./Pane"
+import { Pane } from "./Pane"
 import { Window } from './Window'
 import { getAllWindows } from "."
+import type { PaneData } from "../types"
 
 export class WindowManager {
   private static _instance?: WindowManager = undefined

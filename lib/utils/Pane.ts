@@ -1,15 +1,6 @@
 import { v4 as uuid } from 'uuid'
-import { PaneDirection, WindowInsertPanePosition } from '../types'
+import { PaneDirection, WindowInsertPanePosition, type PaneData } from '../types'
 import { Window } from './Window'
-
-export interface PaneData {
-  id: string
-  windows: ReturnType<Window['getData']>[]
-  activeWindowId: string
-  direction: PaneDirection
-  children: PaneData[]
-  size: number[]
-}
 
 export class Pane {
   id: string

@@ -1,6 +1,6 @@
 {
   "name": "drag-split-pane",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "type": "module",
   "main": "dist/drag-split-pane.js",
   "types": "dist/lib/main.d.ts",

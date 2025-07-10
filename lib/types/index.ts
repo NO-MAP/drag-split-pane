@@ -1,3 +1,5 @@
+import { Window } from '../utils/Window'
+
 // 主题类型定义
 export interface ColorSetting {
   // 面板相关
@@ -100,4 +102,13 @@ export enum WindowInsertPanePosition {
 export enum PaneDirection {
   Vertical = 'Vertical', // 垂直
   Horizontal = 'Horizontal', // 水平,
+}
+
+export interface PaneData {
+  id: string
+  windows: ReturnType<Window['getData']>[]
+  activeWindowId: string
+  direction: PaneDirection
+  children: PaneData[]
+  size: number[]
 }

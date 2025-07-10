@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { DragSplitPane } from '../lib/main'
-import { PaneDirection } from '../lib/types'
+import { PaneDirection, type PaneData } from '../lib/types'
 import CodeTab from './component/CodeTab.vue'
-import type { PaneData } from '../lib/utils/Pane'
 import { WindowManager } from '../lib/utils/WindowManager'
 
 const defaultPaneData: PaneData = {
